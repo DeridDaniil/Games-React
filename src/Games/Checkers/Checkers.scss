@@ -1,0 +1,12 @@
+.checkers {
+  min-height: 96.08vh;
+  text-align: center;
+
+  .checkers-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: max-content;
+    margin: 0 auto;
+  }
+}
