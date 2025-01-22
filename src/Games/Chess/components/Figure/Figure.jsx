@@ -1,6 +1,7 @@
 import './Figure.scss';
 
 function Figure({ axisY, axisX, figure }) {
+
   const onDragStart = e => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', `${figure}, ${axisY}, ${axisX}`);
@@ -9,11 +10,14 @@ function Figure({ axisY, axisX, figure }) {
     }, 0);
   }
 
+  const onDragEnd = e => e.target.style.display = 'block';
+
   return (
     <div
       className={`figure ${figure} p-${axisY}${axisX}`}
       draggable={true}
       onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
     />
   )
 }

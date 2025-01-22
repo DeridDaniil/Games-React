@@ -7,15 +7,24 @@ function Figures() {
   const [position, setPosition] = useState(createPosition());
   const figuresRef = useRef(null);
 
-  const onDrop = e => {
+  const calculateCoord = e => {
     const { width, left, top } = figuresRef.current.getBoundingClientRect();
     const size = width / 8;
-    const y = Math.floor((e.clientY - left) / size);
-    const x = Math.floor((e.clientX - top) / size);
-    console.log(y, x);
-    const [figure, axisY, axisX] = e.dataTransfer.getData('text').split(',');
-    console.log(figure, axisY, axisX);
-  };
+    const y = 7 - Math.floor((e.clientY - top) / size);
+    const x = Math.floor((e.clientX - left) / size);
+    return { y, x };
+  }
+
+  const onDrop = e => {
+    const newPosition = position.map(axisY => axisY.map(axisX => axisX));
+    const { y, x } = calculateCoord(e);
+    const [figure, axisY, axisX] = e.dataTransfer.getData('text').split(', ');
+
+    newPosition[axisY][axisX] = '';
+    newPosition[y][x] = figure;
+
+    setPosition(newPosition);
+  }
 
   const onDragOver = e => e.preventDefault();
 
