@@ -1,10 +1,12 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import Checker from '../Checker/Checker';
-import { createPosition } from '../checkersHelper';
+import { useCheckersContext } from '../../reducer/Context';
+import { makeNewMove } from '../../reducer/actions/move';
 import './CheckerFigures.scss';
 
 function CheckerFigures() {
-  const [position, setPosition] = useState(createPosition);
+  const { checkersState, dispatch } = useCheckersContext();
+  const position = checkersState.position[checkersState.position.length - 1];
   const figuresRef = useRef(null);
 
   const calculateCoords = e => {
@@ -23,7 +25,7 @@ function CheckerFigures() {
     newPosition[axisY][axisX] = '';
     newPosition[y][x] = checker;
 
-    setPosition(newPosition);
+    dispatch(makeNewMove({ newPosition }));
   }
 
   const onDragOver = e => e.preventDefault();

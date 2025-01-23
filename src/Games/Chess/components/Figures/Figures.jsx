@@ -1,10 +1,12 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
+import { useChessContext } from '../../reducer/Context';
+import { makeNewMove } from '../../reducer/actions/move';
 import Figure from '../Figure/Figure';
 import './Figures.scss';
-import { createPosition } from '../chessHelper';
 
 function Figures() {
-  const [position, setPosition] = useState(createPosition());
+  const { chessState, dispatch } = useChessContext();
+  const position = chessState.position[chessState.position.length - 1];
   const figuresRef = useRef(null);
 
   const calculateCoord = e => {
@@ -23,7 +25,7 @@ function Figures() {
     newPosition[axisY][axisX] = '';
     newPosition[y][x] = figure;
 
-    setPosition(newPosition);
+    dispatch(makeNewMove({ newPosition }));
   }
 
   const onDragOver = e => e.preventDefault();
