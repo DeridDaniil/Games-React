@@ -8,6 +8,7 @@ function Figure({ axisY, axisX, figure }) {
   const { chessState, dispatch } = useChessContext();
   const { turn, position } = chessState;
   const currentPosition = position[position.length - 1];
+  const prevPosition = position[position.length - 2];
 
   const onDragStart = e => {
     e.dataTransfer.effectAllowed = 'move';
@@ -16,7 +17,7 @@ function Figure({ axisY, axisX, figure }) {
       e.target.style.display = 'none';
     }, 0);
     if (turn === figure.slice(0, 5)) {
-      const candidateMoves = arbiter.getRegularMoves({ position: currentPosition, figure, axisY, axisX });
+      const candidateMoves = arbiter.getValidMoves({ position: currentPosition, prevPosition, figure, axisY, axisX });
       dispatch(generateCandidateMoves({ candidateMoves }));
     }
   }

@@ -122,16 +122,37 @@ export const getPawnMoves = ({ position, figure, axisY, axisX }) => {
   }
 
   if (axisY % 5 === 1) {
-    if (!position?.[axisY + moveY]?.[axisX] && !position?.[axisY + moveY + moveY]?.[axisX]) {
+    if (position?.[axisY + moveY]?.[axisX] !== undefined && !position?.[axisY + moveY + moveY]?.[axisX]) {
       moves.push([axisY + moveY + moveY, axisX]);
     }
   }
 
   moveX.forEach(x => {
-    if (position?.[axisY + moveY]?.[axisX + x].slice(0, 5) === enemy) {
+    if (position?.[axisY + moveY]?.[axisX + x] !== undefined && position?.[axisY + moveY]?.[axisX + x].slice(0, 5) === enemy) {
       moves.push([axisY + moveY, axisX + x]);
     }
   });
 
+  return moves;
+}
+
+export const getPawnCaptures = ({ position, prevPosition, figure, axisY, axisX }) => {
+  const moves = [];
+  const moveY = figure.slice(0, 5) === 'white' ? 1 : -1;
+  const moveX = [1, -1];
+  const enemyPawn = moveY === 1 ? 'black-pawn' : 'white-pawn';
+  if (prevPosition) {
+    if ((moveY === 1 && axisY === 4) || (moveY === -1 && axisY === 3)) {
+      moveX.forEach(x => {
+        if (position?.[axisY]?.[axisX + x] === enemyPawn &&
+          position?.[axisY + moveY + moveY]?.[axisX + x] === '' &&
+          prevPosition?.[axisY]?.[axisX + x] === '' &&
+          prevPosition?.[axisY + moveY + moveY]?.[axisX + x] === enemyPawn
+        ) {
+          moves.push([axisY + moveY, axisX + x]);
+        }
+      })
+    }
+  }
   return moves;
 }

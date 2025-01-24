@@ -23,6 +23,11 @@ function Figures() {
     const [figure, axisY, axisX] = e.dataTransfer.getData('text').split(', ');
 
     if (chessState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
+
+      if (figure.slice(6) === 'pawn' && !newPosition[y][x] && y !== axisY && x !== axisX) {
+        newPosition[axisY][x] = ''
+      }
+
       newPosition[axisY][axisX] = '';
       newPosition[y][x] = figure;
       dispatch(makeNewMove({ newPosition }));
