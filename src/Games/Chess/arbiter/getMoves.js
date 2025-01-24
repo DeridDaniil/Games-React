@@ -44,7 +44,6 @@ export const getKnightMoves = ({ position, figure, axisY, axisX }) => {
     const cell = position?.[axisY + dir[0]]?.[axisX + dir[1]];
     if (cell !== undefined && cell.slice(0, 5) !== us) {
       moves.push([axisY + dir[0], axisX + dir[1]]);
-      console.log(cell.slice(0, 5), us);
     }
   })
 
@@ -84,5 +83,55 @@ export const getQueenMoves = ({ position, figure, axisY, axisX }) => {
     ...getRookMoves({ position, figure, axisY, axisX }),
     ...getBishopMoves({ position, figure, axisY, axisX })
   ];
+  return moves;
+}
+
+export const getKingMoves = ({ position, figure, axisY, axisX }) => {
+  const moves = [];
+  const us = figure.slice(0, 5);
+  const directions = [
+    [0, 1],
+    [0, -1],
+    [1, 0],
+    [1, -1],
+    [1, 1],
+    [-1, 0],
+    [-1, 1],
+    [-1, -1],
+  ];
+
+  directions.forEach(dir => {
+    const cell = position?.[axisY + dir[0]]?.[axisX + dir[1]];
+    if (cell !== undefined && cell.slice(0, 5) !== us) {
+      moves.push([axisY + dir[0], axisX + dir[1]]);
+    }
+  })
+
+  return moves;
+}
+
+export const getPawnMoves = ({ position, figure, axisY, axisX }) => {
+  const moves = [];
+  const isWhite = figure.slice(0, 5) === 'white';
+  const moveY = isWhite ? 1 : -1;
+  const moveX = [1, -1];
+  const enemy = isWhite ? 'black' : 'white';
+
+  if (!position?.[axisY + moveY]?.[axisX]) {
+    moves.push([axisY + moveY, axisX]);
+  }
+
+  if (axisY % 5 === 1) {
+    if (!position?.[axisY + moveY]?.[axisX] && !position?.[axisY + moveY + moveY]?.[axisX]) {
+      moves.push([axisY + moveY + moveY, axisX]);
+    }
+  }
+
+  moveX.forEach(x => {
+    if (position?.[axisY + moveY]?.[axisX + x].slice(0, 5) === enemy) {
+      moves.push([axisY + moveY, axisX + x]);
+    }
+  });
+
   return moves;
 }
