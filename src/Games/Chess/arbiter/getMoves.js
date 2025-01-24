@@ -25,3 +25,28 @@ export const getRookMoves = ({ position, figure, axisY, axisX }) => {
 
   return moves;
 }
+
+export const getKnightMoves = ({ position, figure, axisY, axisX }) => {
+  const moves = [];
+  const us = figure.slice(0, 5);
+  const directions = [
+    [2, -1],
+    [2, 1],
+    [-2, -1],
+    [-2, 1],
+    [1, -2],
+    [1, 2],
+    [-1, -2],
+    [-1, 2]
+  ];
+
+  directions.forEach(dir => {
+    const cell = position?.[axisY + dir[0]]?.[axisX + dir[1]];
+    if (cell !== undefined && cell.slice(0, 5) !== us) {
+      moves.push([axisY + dir[0], axisX + dir[1]]);
+      console.log(cell.slice(0, 5), us);
+    }
+  })
+
+  return moves;
+}

@@ -10,7 +10,7 @@ function App() {
     <div className="app">
       <Navigation />
       {/* <TicTacToe /> */}
-      {/* <Chess /> */}
+      <Chess />
       <Checkers />
     </div>
   )
