@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import Checker from '../Checker/Checker';
 import { useCheckersContext } from '../../reducer/Context';
-import { makeNewMove } from '../../reducer/actions/move';
+import { clearCandidates, makeNewMove } from '../../reducer/actions/move';
 import './CheckerFigures.scss';
 
 function CheckerFigures() {
@@ -22,10 +22,13 @@ function CheckerFigures() {
     const { y, x } = calculateCoords(e);
     const [axisY, axisX, checker] = e.dataTransfer.getData('text').split(', ');
 
-    newPosition[axisY][axisX] = '';
-    newPosition[y][x] = checker;
+    if (checkersState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
+      newPosition[axisY][axisX] = '';
+      newPosition[y][x] = checker;
 
-    dispatch(makeNewMove({ newPosition }));
+      dispatch(makeNewMove({ newPosition }));
+    }
+    dispatch(clearCandidates())
   }
 
   const onDragOver = e => e.preventDefault();

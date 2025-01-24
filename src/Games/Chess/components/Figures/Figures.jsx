@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useChessContext } from '../../reducer/Context';
-import { makeNewMove } from '../../reducer/actions/move';
+import { clearCandidates, makeNewMove } from '../../reducer/actions/move';
 import Figure from '../Figure/Figure';
 import './Figures.scss';
 
@@ -22,10 +22,13 @@ function Figures() {
     const { y, x } = calculateCoord(e);
     const [figure, axisY, axisX] = e.dataTransfer.getData('text').split(', ');
 
-    newPosition[axisY][axisX] = '';
-    newPosition[y][x] = figure;
+    if (chessState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
+      newPosition[axisY][axisX] = '';
+      newPosition[y][x] = figure;
+      dispatch(makeNewMove({ newPosition }));
+    }
 
-    dispatch(makeNewMove({ newPosition }));
+    dispatch(clearCandidates());
   }
 
   const onDragOver = e => e.preventDefault();

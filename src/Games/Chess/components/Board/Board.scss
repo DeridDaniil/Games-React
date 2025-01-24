@@ -1,4 +1,4 @@
-.board {
+.chessBoard {
   position: relative;
   margin: 0 auto;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -16,6 +16,8 @@
     max-height: calc(8 * 90px);
 
     .cell {
+      position: relative;
+      z-index: -1;
       width: 90px;
       height: 90px;
 
@@ -25,6 +27,28 @@
 
       &.black {
         background-color: #3b7478;
+      }
+
+      &.attacking::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 5px solid rgba(0, 0, 0, 0.2);
+      }
+
+      &.highlight::before {
+        content: "";
+        position: absolute;
+        top: 25%;
+        left: 25%;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.2);
       }
     }
   }
@@ -60,10 +84,10 @@
 
     span {
       width: 90px;
+      color: black;
       font-weight: bold;
       font-size: 19px;
       user-select: none;
-      color: black;
 
       &.black {
         color: #ebecd0;

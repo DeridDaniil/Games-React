@@ -1,10 +1,10 @@
 export const createPosition = () => {
   const position = Array(8).fill('').map(_x => Array(8).fill(''));
 
-  for (let i = 0; i < 8; i++) {
-    position[1][i] = 'white-pawn';
-    position[6][i] = 'black-pawn';
-  }
+  // for (let i = 0; i < 8; i++) {
+  //   position[1][i] = 'white-pawn';
+  //   position[6][i] = 'black-pawn';
+  // }
 
   position[0][0] = 'white-rook';
   position[0][1] = 'white-knight';

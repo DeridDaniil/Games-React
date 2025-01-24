@@ -1,4 +1,4 @@
-import Board from '../../components/Board/Board';
+import Board from './components/Board/Board';
 import Figures from './components/Figures/Figures';
 import СhessContext from './reducer/Context';
 import { useReducer } from 'react';

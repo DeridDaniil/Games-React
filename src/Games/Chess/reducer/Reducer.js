@@ -15,6 +15,20 @@ export const ChessReducer = (state, action) => {
         position
       };
     }
+
+    case ActionTypes.GENERATE_CANDIDATE_MOVES: {
+      return {
+        ...state,
+        candidateMoves: action.payload.candidateMoves
+      }
+    }
+
+    case ActionTypes.CLEAR_CANDIDATE_MOVES: {
+      return {
+        ...state,
+        candidateMoves: []
+      }
+    }
   }
 
   return state;

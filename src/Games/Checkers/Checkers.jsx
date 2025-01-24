@@ -1,4 +1,4 @@
-import Board from '../../components/Board/Board';
+import Board from './components/Board/Board';
 import CheckerFigures from './components/CheckerFigures/CheckerFigures';
 import CheckersContext from './reducer/Context';
 import { CheckersReducer } from './reducer/Reducer';
