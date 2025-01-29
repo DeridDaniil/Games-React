@@ -1,4 +1,5 @@
 import { getBishopMoves, getKingMoves, getKnightMoves, getPawnCaptures, getPawnMoves, getQueenMoves, getRookMoves } from "./getMoves"
+import { moveFigures, movePawns } from "./move";
 
 const arbiter = {
   getRegularMoves: function ({ position, figure, axisY, axisX }) {
@@ -19,6 +20,10 @@ const arbiter = {
     };
     return moves;
   },
+  performMove: function ({ position, figure, axisY, axisX, y, x }) {
+    if (figure.slice(6) === 'pawn') return movePawns({ position, figure, axisY, axisX, y, x });
+    else return moveFigures({ position, figure, axisY, axisX, y, x });
+  }
 }
 
 export default arbiter;

@@ -1,6 +1,7 @@
 import Board from './components/Board/Board';
 import Figures from './components/Figures/Figures';
 import СhessContext from './reducer/Context';
+import Popup from './components/Popup/Popup';
 import { useReducer } from 'react';
 import { ChessReducer } from './reducer/Reducer';
 import { initChessGame } from './data/constant';
@@ -8,7 +9,7 @@ import './Chess.scss';
 
 function Chess() {
   const [chessState, dispatch] = useReducer(ChessReducer, initChessGame);
-  const chessProviderState = {chessState, dispatch};
+  const chessProviderState = { chessState, dispatch };
 
   return (
     <СhessContext.Provider value={chessProviderState}>
@@ -17,6 +18,7 @@ function Chess() {
         <div className="chess-container">
           <Board />
           <Figures />
+          <Popup />
         </div>
       </div>
     </СhessContext.Provider>

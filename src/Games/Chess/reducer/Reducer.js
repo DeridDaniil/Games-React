@@ -1,4 +1,4 @@
-import { ActionTypes } from "../data/types";
+import { ActionTypes, Status } from "../data/types";
 
 export const ChessReducer = (state, action) => {
   switch (action.type) {
@@ -27,6 +27,22 @@ export const ChessReducer = (state, action) => {
       return {
         ...state,
         candidateMoves: []
+      }
+    }
+
+    case ActionTypes.PROMOTION_OPEN: {
+      return {
+        ...state,
+        status: Status.promoting,
+        promotionSquare: {...action.payload}
+      }
+    }
+
+    case ActionTypes.PROMOTION_CLOSE: {
+      return {
+        ...state,
+        status: Status.ongoing,
+        promotionSquare: null
       }
     }
   }

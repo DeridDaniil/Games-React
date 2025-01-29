@@ -1,0 +1,39 @@
+.popup__inner {
+  position: absolute;
+  top: 34.7%;
+  left: 34.7%;
+  width: 180px;
+  height: 180px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0px 0px 25px 10px rgba(0, 0, 0, 0.25);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+  backdrop-filter: blur(10px);
+  transform: scale(1.2);
+
+  &.promotion-choise {
+    .figure {
+      &:hover {
+        transform: scale(1.05);
+      }
+
+      &:is(.white-queen, .black-queen) {
+        left: 9%;
+      }
+
+      &:is(.white-rook, .black-rook) {
+        left: 50%;
+      }
+
+      &:is(.white-bishop, .black-bishop) {
+        top: 49%;
+      }
+
+      &:is(.white-knight, .black-knight) {
+        top: 49%;
+        left: 50%;
+      }
+    }
+  }
+}

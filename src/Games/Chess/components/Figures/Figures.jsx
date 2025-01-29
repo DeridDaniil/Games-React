@@ -2,7 +2,9 @@ import { useRef } from 'react';
 import { useChessContext } from '../../reducer/Context';
 import { clearCandidates, makeNewMove } from '../../reducer/actions/move';
 import Figure from '../Figure/Figure';
+import arbiter from '../../arbiter/arbiter';
 import './Figures.scss';
+import { openPromotion } from '../../reducer/actions/popup';
 
 function Figures() {
   const { chessState, dispatch } = useChessContext();
@@ -17,23 +19,27 @@ function Figures() {
     return { y, x };
   }
 
-  const onDrop = e => {
-    const newPosition = position.map(axisY => axisY.map(axisX => axisX));
+  const openPromotionBox = ({ axisY, axisX, y, x }) => {
+    dispatch(openPromotion({ axisY: Number(axisY), axisX: Number(axisX), y, x }));
+  }
+
+  const move = e => {
     const { y, x } = calculateCoord(e);
     const [figure, axisY, axisX] = e.dataTransfer.getData('text').split(', ');
-
     if (chessState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
-
-      if (figure.slice(6) === 'pawn' && !newPosition[y][x] && y !== axisY && x !== axisX) {
-        newPosition[axisY][x] = ''
+      if (figure === 'white-pawn' && y === 7 || figure === 'black-pawn' && y === 0) {
+        openPromotionBox({ axisY, axisX, y, x });
+        return;
       }
-
-      newPosition[axisY][axisX] = '';
-      newPosition[y][x] = figure;
+      const newPosition = arbiter.performMove({ position, figure, axisY, axisX, y, x });
       dispatch(makeNewMove({ newPosition }));
     }
-
     dispatch(clearCandidates());
+  }
+
+  const onDrop = e => {
+    e.preventDefault();
+    move(e);
   }
 
   const onDragOver = e => e.preventDefault();
