@@ -5,6 +5,8 @@ import Figure from '../Figure/Figure';
 import arbiter from '../../arbiter/arbiter';
 import './Figures.scss';
 import { openPromotion } from '../../reducer/actions/popup';
+import { getCastleDirection } from '../../arbiter/getMoves';
+import { updateCastling } from '../../reducer/actions/game';
 
 function Figures() {
   const { chessState, dispatch } = useChessContext();
@@ -23,6 +25,15 @@ function Figures() {
     dispatch(openPromotion({ axisY: Number(axisY), axisX: Number(axisX), y, x }));
   }
 
+  const updateCastlingState = ({ figure, axisY, axisX }) => {
+    const direction = getCastleDirection({
+      castleDirection: chessState.castleDirection,
+      figure, axisY, axisX
+    });
+
+    if (direction) dispatch(updateCastling(direction));
+  }
+
   const move = e => {
     const { y, x } = calculateCoord(e);
     const [figure, axisY, axisX] = e.dataTransfer.getData('text').split(', ');
@@ -30,6 +41,9 @@ function Figures() {
       if (figure === 'white-pawn' && y === 7 || figure === 'black-pawn' && y === 0) {
         openPromotionBox({ axisY, axisX, y, x });
         return;
+      }
+      if (figure.slice(6) === 'rook' || figure.slice(6) === 'king') {
+        updateCastlingState({ figure, axisY, axisX });
       }
       const newPosition = arbiter.performMove({ position, figure, axisY, axisX, y, x });
       dispatch(makeNewMove({ newPosition }));

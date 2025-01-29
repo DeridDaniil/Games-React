@@ -34,7 +34,7 @@ export const ChessReducer = (state, action) => {
       return {
         ...state,
         status: Status.promoting,
-        promotionSquare: {...action.payload}
+        promotionSquare: { ...action.payload }
       }
     }
 
@@ -43,6 +43,16 @@ export const ChessReducer = (state, action) => {
         ...state,
         status: Status.ongoing,
         promotionSquare: null
+      }
+    }
+
+    case ActionTypes.CAN_CASTLE: {
+      let { turn, castleDirection } = state;
+      castleDirection[turn] = action.payload;
+
+      return {
+        ...state,
+        castleDirection
       }
     }
   }

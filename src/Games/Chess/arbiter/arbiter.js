@@ -1,4 +1,4 @@
-import { getBishopMoves, getKingMoves, getKnightMoves, getPawnCaptures, getPawnMoves, getQueenMoves, getRookMoves } from "./getMoves"
+import { getBishopMoves, getCastlingMoves, getKingMoves, getKnightMoves, getPawnCaptures, getPawnMoves, getQueenMoves, getRookMoves } from "./getMoves"
 import { moveFigures, movePawns } from "./move";
 
 const arbiter = {
@@ -10,12 +10,18 @@ const arbiter = {
     if (figure.slice(6) === 'king') return getKingMoves({ position, figure, axisY, axisX });
     if (figure.slice(6) === 'pawn') return getPawnMoves({ position, figure, axisY, axisX });
   },
-  getValidMoves: function ({ position, prevPosition, figure, axisY, axisX }) {
+  getValidMoves: function ({ position, prevPosition, castleDirection, figure, axisY, axisX }) {
     let moves = this.getRegularMoves({ position, prevPosition, figure, axisY, axisX });
     if (figure.slice(6) === 'pawn') {
       moves = [
         ...moves,
         ...getPawnCaptures({ position, prevPosition, figure, axisY, axisX })
+      ];
+    };
+    if (figure.slice(6) === 'king') {
+      moves = [
+        ...moves,
+        ...getCastlingMoves({ position, castleDirection, figure, axisY, axisX })
       ];
     };
     return moves;

@@ -156,3 +156,43 @@ export const getPawnCaptures = ({ position, prevPosition, figure, axisY, axisX }
   }
   return moves;
 }
+
+export const getCastlingMoves = ({ position, castleDirection, figure, axisY, axisX }) => {
+  const moves = [];
+  if (axisX !== 4 || axisY % 7 !== 0 || castleDirection === 'none') return moves;
+  const us = figure.slice(0, 5);
+  const y = us === 'white' ? 0 : 7;
+
+  if (['left', 'both'].includes(castleDirection) &&
+    !position[y][3] &&
+    !position[y][2] &&
+    !position[y][1] &&
+    position[y][0] === `${us}-rook`) {
+    moves.push([y, 2]);
+  }
+
+  if (['right', 'both'].includes(castleDirection) &&
+    !position[y][5] &&
+    !position[y][6] &&
+    position[y][7] === `${us}-rook`) {
+    moves.push([y, 6]);
+  }
+
+  return moves;
+}
+
+export const getCastleDirection = ({ castleDirection, figure, axisY, axisX }) => {
+  if (figure.slice(6) === 'king') return 'none';
+  const direction = castleDirection[figure.slice(0, 5)];
+  const y = figure.slice(0, 5) === 'white' ? 0 : 7;
+
+  if (Number(axisY) === y && Number(axisX) === 0) {
+    if (direction === 'both') return 'right';
+    if (direction === 'left') return 'none';
+  }
+
+  if (Number(axisY) === y && Number(axisX) === 7) {
+    if (direction === 'both') return 'left';
+    if (direction === 'right') return 'none';
+  }
+}
