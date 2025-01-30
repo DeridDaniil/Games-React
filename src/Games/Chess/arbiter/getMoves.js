@@ -1,3 +1,5 @@
+import arbiter from "./arbiter";
+
 export const getRookMoves = ({ position, figure, axisY, axisX }) => {
   const moves = [];
   const us = figure.slice(0, 5);
@@ -159,7 +161,10 @@ export const getPawnCaptures = ({ position, prevPosition, figure, axisY, axisX }
 
 export const getCastlingMoves = ({ position, castleDirection, figure, axisY, axisX }) => {
   const moves = [];
+
   if (axisX !== 4 || axisY % 7 !== 0 || castleDirection === 'none') return moves;
+  if (arbiter.isPlayerInCheck({ positionAfterMove: position, player: figure.slice(0, 5) })) return moves
+
   const us = figure.slice(0, 5);
   const y = us === 'white' ? 0 : 7;
 
@@ -167,14 +172,30 @@ export const getCastlingMoves = ({ position, castleDirection, figure, axisY, axi
     !position[y][3] &&
     !position[y][2] &&
     !position[y][1] &&
-    position[y][0] === `${us}-rook`) {
+    position[y][0] === `${us}-rook` &&
+    !arbiter.isPlayerInCheck({
+      positionAfterMove: arbiter.performMove({ position, figure, axisY, axisX, y, x: 3 }),
+      player: us
+    }) &&
+    !arbiter.isPlayerInCheck({
+      positionAfterMove: arbiter.performMove({ position, figure, axisY, axisX, y, x: 2 }),
+      player: us
+    })) {
     moves.push([y, 2]);
   }
 
   if (['right', 'both'].includes(castleDirection) &&
     !position[y][5] &&
     !position[y][6] &&
-    position[y][7] === `${us}-rook`) {
+    position[y][7] === `${us}-rook` &&
+    !arbiter.isPlayerInCheck({
+      positionAfterMove: arbiter.performMove({ position, figure, axisY, axisX, y, x: 6 }),
+      player: us
+    }) &&
+    !arbiter.isPlayerInCheck({
+      positionAfterMove: arbiter.performMove({ position, figure, axisY, axisX, y, x: 5 }),
+      player: us
+    })) {
     moves.push([y, 6]);
   }
 
@@ -195,4 +216,34 @@ export const getCastleDirection = ({ castleDirection, figure, axisY, axisX }) =>
     if (direction === 'both') return 'left';
     if (direction === 'right') return 'none';
   }
+}
+
+export const getKingPosition = (position, player) => {
+  let kingPosition;
+
+  position.forEach((axisY, y) => {
+    axisY.forEach((_axisX, x) => {
+      if (position[y][x] === `${player}-king`) kingPosition = [y, x];
+    })
+  })
+
+  return kingPosition;
+}
+
+export const getFigures = (position, enemy) => {
+  const enemyfigures = [];
+
+  position.forEach((axisY, y) => {
+    axisY.forEach((_axisX, x) => {
+      if (position[y][x].slice(0, 5) === enemy) {
+        enemyfigures.push({
+          figure: position[y][x],
+          axisY: y,
+          axisX: x
+        })
+      }
+    })
+  })
+
+  return enemyfigures;
 }

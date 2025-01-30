@@ -1,12 +1,24 @@
 import { useChessContext } from '../../reducer/Context';
+import arbiter from '../../arbiter/arbiter';
+import { getKingPosition } from '../../arbiter/getMoves';
 import './Board.scss';
 
 function Board() {
   const axisY = Array(8).fill(' ').map((_y, i) => 8 - i);
   const axisX = Array(8).fill(' ').map((_x, i) => i + 1);
 
-  const {chessState} = useChessContext();
+  const { chessState } = useChessContext();
   const position = chessState.position[chessState.position.length - 1];
+
+  const isChecked = (() => {
+    const isInCheck = arbiter.isPlayerInCheck({
+      positionAfterMove: position,
+      player: chessState.turn
+    });
+
+    if (isInCheck) return getKingPosition(position, chessState.turn);
+    return null;
+  })();
 
   const getClassName = (y, x) => {
     let style = 'cell';
@@ -16,6 +28,8 @@ function Board() {
       if (position[y][x]) style += ' attacking';
       else style += ' highlight'
     }
+
+    if (isChecked && isChecked[0] === y && isChecked[1] === x) style += ' checked';
 
     return style;
   }
