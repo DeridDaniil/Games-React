@@ -124,7 +124,7 @@ export const getPawnMoves = ({ position, figure, axisY, axisX }) => {
   }
 
   if (axisY % 5 === 1) {
-    if (position?.[axisY + moveY]?.[axisX] !== undefined && !position?.[axisY + moveY + moveY]?.[axisX]) {
+    if (position?.[axisY + moveY]?.[axisX] !== undefined && !position?.[axisY + moveY + moveY]?.[axisX] && position?.[axisY + moveY + moveY]?.[axisX] !== undefined) {
       moves.push([axisY + moveY + moveY, axisX]);
     }
   }
