@@ -5,6 +5,8 @@ import Popup from './components/Popup/Popup';
 import { useReducer } from 'react';
 import { ChessReducer } from './reducer/Reducer';
 import { initChessGame } from './data/constant';
+import PromotionBox from './components/Popup/PromotionBox/PromotionBox';
+import GameEnds from './components/Popup/GameEnds/GameEnds';
 import './Chess.scss';
 
 function Chess() {
@@ -18,7 +20,10 @@ function Chess() {
         <div className="chess-container">
           <Board />
           <Figures />
-          <Popup />
+          <Popup>
+            <PromotionBox />
+            <GameEnds />
+          </Popup>
         </div>
       </div>
     </СhessContext.Provider>

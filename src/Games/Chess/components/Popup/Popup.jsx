@@ -3,8 +3,9 @@ import './Popup.scss';
 import { useChessContext } from "../../reducer/Context";
 import { Status } from "../../data/types";
 import { closePopup } from "../../reducer/actions/popup";
+import { Children, cloneElement } from "react";
 
-const Popup = () => {
+const Popup = ({ children }) => {
   const { chessState, dispatch } = useChessContext();
   if (chessState.status === Status.ongoing) return null;
 
@@ -14,7 +15,7 @@ const Popup = () => {
 
   return (
     <div className="popup">
-      <PromotionBox onClosePopup={onClosePopup} />
+      {Children.toArray(children).map(child => cloneElement(child, { onClosePopup }))}
     </div>
   )
 }

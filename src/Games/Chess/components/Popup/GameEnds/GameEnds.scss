@@ -1,0 +1,54 @@
+.game_ends {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.75);
+
+  .game_ends--inner {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    h1 {
+      margin: 0;
+      margin-top: 80px;
+      padding: 0;
+      line-height: normal;
+    }
+
+    p {
+      margin: 0;
+      margin-bottom: 110px;
+      padding: 0;
+      font-size: 24px;
+    }
+
+    button {
+      position: relative;
+      border: none;
+      border-bottom: 2px solid white;
+      color: inherit;
+      font-family: inherit;
+      font-size: 24px;
+      background-color: transparent;
+      cursor: pointer;
+      animation: animButton 1.7s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes animButton {
+  0% {
+    scale: 1;
+  }
+
+  50% {
+    scale: 1.2;
+  }
+
+  100% {
+    scale: 1;
+  }
+}

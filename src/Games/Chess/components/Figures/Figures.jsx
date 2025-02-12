@@ -6,7 +6,7 @@ import arbiter from '../../arbiter/arbiter';
 import './Figures.scss';
 import { openPromotion } from '../../reducer/actions/popup';
 import { getCastleDirection } from '../../arbiter/getMoves';
-import { updateCastling } from '../../reducer/actions/game';
+import { detectStalemate, updateCastling } from '../../reducer/actions/game';
 
 function Figures() {
   const { chessState, dispatch } = useChessContext();
@@ -38,15 +38,24 @@ function Figures() {
     const { y, x } = calculateCoord(e);
     const [figure, axisY, axisX] = e.dataTransfer.getData('text').split(', ');
     if (chessState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
+      const opponent = figure.slice(0, 5) == 'white' ? 'black' : 'white';
+      const castleDirection = chessState.castleDirection[opponent];
+
       if (figure === 'white-pawn' && y === 7 || figure === 'black-pawn' && y === 0) {
         openPromotionBox({ axisY, axisX, y, x });
         return;
       }
+
       if (figure.slice(6) === 'rook' || figure.slice(6) === 'king') {
         updateCastlingState({ figure, axisY, axisX });
       }
+
       const newPosition = arbiter.performMove({ position, figure, axisY, axisX, y, x });
       dispatch(makeNewMove({ newPosition }));
+
+      if (arbiter.isStalemate(newPosition, opponent, castleDirection)) {
+        dispatch(detectStalemate());
+      }
     }
     dispatch(clearCandidates());
   }

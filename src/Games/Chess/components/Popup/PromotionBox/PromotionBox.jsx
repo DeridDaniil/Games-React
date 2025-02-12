@@ -10,19 +10,6 @@ const PromotionBox = ({ onClosePopup }) => {
   const options = ['queen', 'rook', 'bishop', 'knight'];
   const color = promotionSquare.y === 7 ? 'white' : 'black';
 
-  // const getPromotionBoxPosition = () => {
-  //   const style = {};
-
-  //   if (promotionSquare.y === 7) style.top = '-16%';
-  //   else style.top = '90%';
-
-  //   if (promotionSquare.x <= 1) style.left = '0%';
-  //   else if (promotionSquare.x >= 6) style.right = '0%';
-  //   else style.left = `${12.5 * promotionSquare.x - 20}%`;
-
-  //   return style;
-  // }
-
   const onClick = (option) => {
     onClosePopup();
     const newPosition = position[position.length - 1].map(axisY => axisY.map(axisX => axisX));
