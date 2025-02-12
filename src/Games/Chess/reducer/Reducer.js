@@ -68,6 +68,13 @@ export const ChessReducer = (state, action) => {
         ...action.payload
       }
     }
+
+    case ActionTypes.INSUFFICIENT_MATERIAL: {
+      return {
+        ...state,
+        status: Status.insufficient
+      }
+    }
   }
 
   return state;

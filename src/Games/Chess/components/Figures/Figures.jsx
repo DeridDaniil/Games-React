@@ -6,7 +6,7 @@ import arbiter from '../../arbiter/arbiter';
 import './Figures.scss';
 import { openPromotion } from '../../reducer/actions/popup';
 import { getCastleDirection } from '../../arbiter/getMoves';
-import { detectStalemate, updateCastling } from '../../reducer/actions/game';
+import { detectInsufficientMaterial, detectStalemate, updateCastling } from '../../reducer/actions/game';
 
 function Figures() {
   const { chessState, dispatch } = useChessContext();
@@ -53,9 +53,8 @@ function Figures() {
       const newPosition = arbiter.performMove({ position, figure, axisY, axisX, y, x });
       dispatch(makeNewMove({ newPosition }));
 
-      if (arbiter.isStalemate(newPosition, opponent, castleDirection)) {
-        dispatch(detectStalemate());
-      }
+      if (arbiter.insufficientMaterial(newPosition)) dispatch(detectInsufficientMaterial());
+      else if (arbiter.isStalemate(newPosition, opponent, castleDirection)) dispatch(detectStalemate());
     }
     dispatch(clearCandidates());
   }

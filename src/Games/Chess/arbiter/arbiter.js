@@ -1,3 +1,4 @@
+import { areSameColorTiles, findFiguresCoords } from "../data/helper";
 import { getBishopMoves, getCastlingMoves, getFigures, getKingMoves, getKingPosition, getKnightMoves, getPawnCaptures, getPawnMoves, getQueenMoves, getRookMoves } from "./getMoves"
 import { moveFigures, movePawns } from "./move";
 
@@ -78,6 +79,25 @@ const arbiter = {
     ], []);
 
     return (!isInCheck && moves.length === 0);
+  },
+  insufficientMaterial: function (position) {
+    const figures = position.reduce((acc, axisY) => acc = [
+      ...acc,
+      ...axisY.filter(axisX => axisX)
+    ], []);
+
+    if (figures.length === 2) return true;
+    if (figures.length === 3 && (figures.some(f => f.slice(6) === 'bishop' || f.slice(6) === 'knight'))) return true;
+    if (figures.length === 4 &&
+      figures.every(f => f.slice(6) === 'bishop' || f.slice(6) === 'king') &&
+      new Set(figures).size === 4 &&
+      areSameColorTiles(
+        findFiguresCoords(position, 'white-bishop')[0],
+        findFiguresCoords(position, 'black-bishop')[0]
+      )
+    ) return true;
+
+    return false;
   }
 }
 
