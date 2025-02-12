@@ -114,10 +114,7 @@ export const getKingMoves = ({ position, figure, axisY, axisX }) => {
 
 export const getPawnMoves = ({ position, figure, axisY, axisX }) => {
   const moves = [];
-  const isWhite = figure.slice(0, 5) === 'white';
-  const moveY = isWhite ? 1 : -1;
-  const moveX = [1, -1];
-  const enemy = isWhite ? 'black' : 'white';
+  const moveY = figure.slice(0, 5) === 'white' ? 1 : -1;
 
   if (!position?.[axisY + moveY]?.[axisX]) {
     moves.push([axisY + moveY, axisX]);
@@ -129,20 +126,23 @@ export const getPawnMoves = ({ position, figure, axisY, axisX }) => {
     }
   }
 
+  return moves;
+}
+
+export const getPawnCaptures = ({ position, prevPosition, figure, axisY, axisX }) => {
+  const moves = [];
+  const isWhite = figure.slice(0, 5) === 'white';
+  const moveY = isWhite ? 1 : -1;
+  const moveX = [1, -1];
+  const enemyPawn = moveY === 1 ? 'black-pawn' : 'white-pawn';
+  const enemy = isWhite ? 'black' : 'white';
+
   moveX.forEach(x => {
     if (position?.[axisY + moveY]?.[axisX + x] !== undefined && position?.[axisY + moveY]?.[axisX + x].slice(0, 5) === enemy) {
       moves.push([axisY + moveY, axisX + x]);
     }
   });
 
-  return moves;
-}
-
-export const getPawnCaptures = ({ position, prevPosition, figure, axisY, axisX }) => {
-  const moves = [];
-  const moveY = figure.slice(0, 5) === 'white' ? 1 : -1;
-  const moveX = [1, -1];
-  const enemyPawn = moveY === 1 ? 'black-pawn' : 'white-pawn';
   if (prevPosition) {
     if ((moveY === 1 && axisY === 4) || (moveY === -1 && axisY === 3)) {
       moveX.forEach(x => {
