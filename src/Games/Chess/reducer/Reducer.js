@@ -75,6 +75,13 @@ export const ChessReducer = (state, action) => {
         status: Status.insufficient
       }
     }
+
+    case ActionTypes.WIN: {
+      return {
+        ...state,
+        status: action.payload === 'white' ? Status.white : Status.black
+      }
+    }
   }
 
   return state;

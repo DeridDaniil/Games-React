@@ -98,7 +98,21 @@ const arbiter = {
     ) return true;
 
     return false;
-  }
+  },
+  isCheckmate: function (position, player, castleDirection) {
+    const isInCheck = this.isPlayerInCheck({ positionAfterMove: position, player });
+    const figures = getFigures(position, player);
+    const moves = figures.reduce((acc, f) => acc = [
+      ...acc,
+      ...(this.getValidMoves({
+        position,
+        castleDirection,
+        ...f
+      }))
+    ], []);
+
+    return (isInCheck && moves.length === 0);
+  },
 }
 
 export default arbiter;

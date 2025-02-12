@@ -7,6 +7,7 @@ export const ActionTypes = {
   'CAN_CASTLE': 'CAN_CASTLE',
   'STALEMATE': 'STALEMATE',
   'INSUFFICIENT_MATERIAL': 'INSUFFICIENT_MATERIAL',
+  'WIN': 'WIN',
   'NEW_GAME': 'NEW_GAME'
 };
 
@@ -16,5 +17,5 @@ export const Status = {
   'white': 'White wins',
   'black': 'Black wins',
   'stalemate': 'Game draws due to stalemate',
-  'insufficient': 'Game draws due to insuffucient material',
+  'insufficient': 'Game draws due to insuffucient material'
 };
