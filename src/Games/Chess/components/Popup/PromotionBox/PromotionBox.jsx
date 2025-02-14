@@ -1,5 +1,6 @@
 import { clearCandidates, makeNewMove } from '../../../reducer/actions/move';
 import { useChessContext } from '../../../reducer/Context';
+import { getNewMoveNotation } from '../../../data/helper';
 import './PromotionBox.scss';
 
 const PromotionBox = ({ onClosePopup }) => {
@@ -18,7 +19,13 @@ const PromotionBox = ({ onClosePopup }) => {
     newPosition[promotionSquare.y][promotionSquare.x] = color + '-' + option;
 
     dispatch(clearCandidates());
-    dispatch(makeNewMove({ newPosition }));
+    const newMove = getNewMoveNotation({
+      ...promotionSquare,
+      figure: color + '-pawn',
+      promotesTo: option === 'knight' ? color.slice(0, 1) + option.slice(0, 2) : color.slice(0, 1) + option.slice(0, 1),
+      position: chessState.position[chessState.position.length - 1]
+    });
+    dispatch(makeNewMove({ newPosition, newMove }));
   }
 
   return (

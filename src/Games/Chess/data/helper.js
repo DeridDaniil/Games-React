@@ -6,23 +6,23 @@ export const createPosition = () => {
     position[6][i] = 'black-pawn';
   }
 
-  position[0][0] = 'white-rook'
+  position[0][0] = 'white-rook';
   position[0][1] = 'white-knight';
   position[0][2] = 'white-bishop';
   position[0][3] = 'white-queen';
-  position[0][4] = 'white-king'
+  position[0][4] = 'white-king';
   position[0][5] = 'white-bishop';
   position[0][6] = 'white-knight';
-  position[0][7] = 'white-rook'
+  position[0][7] = 'white-rook';
 
-  position[7][0] = 'black-rook'
+  position[7][0] = 'black-rook';
   position[7][1] = 'black-knight';
   position[7][2] = 'black-bishop';
   position[7][3] = 'black-queen';
-  position[7][4] = 'black-king'
+  position[7][4] = 'black-king';
   position[7][5] = 'black-bishop';
   position[7][6] = 'black-knight';
-  position[7][7] = 'black-rook'
+  position[7][7] = 'black-rook';
 
   return position;
 }
@@ -37,4 +37,31 @@ export const findFiguresCoords = (position, type) => {
     })
   });
   return result;
+}
+
+export const getNewMoveNotation = ({ position, figure, axisY, axisX, y, x, promotesTo }) => {
+  let note = '';
+
+  axisY = Number(axisY);
+  axisX = Number(axisX);
+
+  if (figure.slice(6) === 'king' && Math.abs(axisX - x) === 2) {
+    if (axisX > x) return '0-0';
+    else return '0-0-0';
+  }
+
+  if (figure.slice(6) !== 'pawn') {
+    note += figure.slice(6, 7).toUpperCase();
+    if (position[y][x]) {
+      note += 'x';
+    }
+  } else if (axisY !== y && axisX !== x) {
+    note += String.fromCharCode(axisX + 97) + 'x';
+  }
+
+  note += String.fromCharCode(x + 97) + (y + 1);
+
+  if (promotesTo) note += '=' + promotesTo.toUpperCase();
+
+  return note;
 }

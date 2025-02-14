@@ -38,7 +38,7 @@ function Board() {
     <div className="chessBoard">
       <div className="ranks">
         {axisY.map(y => (
-          <span key={y} className={y % 2 === 0 ? 'black' : 'white'}>{y}</span>
+          <span key={y} className={y % 2 === 0 ? 'white' : 'black'}>{y}</span>
         ))}
       </div>
       <div className="cells">

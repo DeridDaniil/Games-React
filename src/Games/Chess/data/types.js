@@ -8,7 +8,8 @@ export const ActionTypes = {
   'STALEMATE': 'STALEMATE',
   'INSUFFICIENT_MATERIAL': 'INSUFFICIENT_MATERIAL',
   'WIN': 'WIN',
-  'NEW_GAME': 'NEW_GAME'
+  'NEW_GAME': 'NEW_GAME',
+  'TAKE_BACK': 'TAKE_BACK'
 };
 
 export const Status = {

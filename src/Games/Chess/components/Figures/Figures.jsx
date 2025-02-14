@@ -3,10 +3,11 @@ import { useChessContext } from '../../reducer/Context';
 import { clearCandidates, makeNewMove } from '../../reducer/actions/move';
 import Figure from '../Figure/Figure';
 import arbiter from '../../arbiter/arbiter';
-import './Figures.scss';
 import { openPromotion } from '../../reducer/actions/popup';
 import { getCastleDirection } from '../../arbiter/getMoves';
 import { detectCheckmate, detectInsufficientMaterial, detectStalemate, updateCastling } from '../../reducer/actions/game';
+import { getNewMoveNotation } from '../../data/helper';
+import './Figures.scss';
 
 function Figures() {
   const { chessState, dispatch } = useChessContext();
@@ -51,7 +52,8 @@ function Figures() {
       }
 
       const newPosition = arbiter.performMove({ position, figure, axisY, axisX, y, x });
-      dispatch(makeNewMove({ newPosition }));
+      const newMove = getNewMoveNotation({ position, figure, axisY, axisX, y, x });
+      dispatch(makeNewMove({ newPosition, newMove }));
 
       if (arbiter.insufficientMaterial(newPosition)) dispatch(detectInsufficientMaterial());
       else if (arbiter.isStalemate(newPosition, opponent, castleDirection)) dispatch(detectStalemate());

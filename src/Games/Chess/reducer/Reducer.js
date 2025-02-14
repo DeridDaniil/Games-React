@@ -3,16 +3,21 @@ import { ActionTypes, Status } from "../data/types";
 export const ChessReducer = (state, action) => {
   switch (action.type) {
     case ActionTypes.NEW_MOVE: {
-      let { turn, position } = state;
+      let { turn, position, movesList } = state;
       turn = turn === 'white' ? 'black' : 'white';
       position = [
         ...position,
         action.payload.newPosition
       ];
+      movesList = [
+        ...movesList,
+        action.payload.newMove
+      ];
       return {
         ...state,
         turn,
-        position
+        position,
+        movesList
       };
     }
 
@@ -80,6 +85,21 @@ export const ChessReducer = (state, action) => {
       return {
         ...state,
         status: action.payload === 'white' ? Status.white : Status.black
+      }
+    }
+
+    case ActionTypes.TAKE_BACK: {
+      let { position, movesList, turn } = state;
+      if (position.length > 1) {
+        position = position.slice(0, position.length - 1);
+        movesList = movesList.slice(0, movesList.length - 1);
+        turn = turn === 'white' ? 'black' : 'white'
+      }
+      return {
+        ...state,
+        position,
+        movesList,
+        turn
       }
     }
   }
