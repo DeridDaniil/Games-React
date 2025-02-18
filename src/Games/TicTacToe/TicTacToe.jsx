@@ -67,7 +67,9 @@ function TicTacToe() {
             <div className="gameEnd">{gameEnd}</div>
           )}
         </div>
-        <button onClick={restartGame}>Заново</button>
+        <button onClick={restartGame}>
+          <span>Заново</span>
+        </button>
       </div>
     </div>
   )
