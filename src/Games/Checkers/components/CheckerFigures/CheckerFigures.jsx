@@ -26,9 +26,18 @@ function CheckerFigures() {
       newPosition[axisY][axisX] = '';
       newPosition[y][x] = checker;
 
+      if (checkersState.candidateAttack) {
+        checkersState.candidateAttack.forEach(candidate => {
+          if ((Number(axisY) + y) / 2 === candidate[0] &&
+            (Number(axisX) + x) / 2 === candidate[1]) {
+            newPosition[candidate[0]][candidate[1]] = '';
+          }
+        });
+      }
+
       dispatch(makeNewMove({ newPosition }));
     }
-    dispatch(clearCandidates())
+    dispatch(clearCandidates());
   }
 
   const onDragOver = e => e.preventDefault();

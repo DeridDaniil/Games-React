@@ -23,10 +23,18 @@ export const CheckersReducer = (state, action) => {
       }
     }
 
-    case ActionTypes.CLEAR_CANDIDATE_MOVES: {
+    case ActionTypes.GENERATE_CANDIDATE_ATTACK: {
       return {
         ...state,
-        candidateMoves: []
+        candidateAttack: action.payload.candidateAttack
+      }
+    }
+
+    case ActionTypes.CLEAR_CANDIDATE: {
+      return {
+        ...state,
+        candidateMoves: [],
+        candidateAttack: []
       }
     }
   }

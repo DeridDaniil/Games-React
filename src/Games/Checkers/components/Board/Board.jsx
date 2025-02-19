@@ -13,8 +13,11 @@ function Board() {
     style += (y + x) % 2 === 0 ? ' black' : ' white';
 
     if (checkersState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
-      if (position[y][x]) style += ' attacking';
-      else style += ' highlight';
+      style += ' highlight';
+    }
+
+    if (checkersState.candidateAttack?.find(m => m[0] === y && m[1] === x)) {
+      style += ' attacking'
     }
 
     return style;

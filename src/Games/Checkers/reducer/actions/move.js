@@ -14,8 +14,15 @@ export const generateCandidateMoves = ({ candidateMoves }) => {
   }
 };
 
-export const clearCandidates = () => {
+export const generateCandidateAttack = ({ candidateAttack }) => {
   return {
-    type: ActionTypes.CLEAR_CANDIDATE_MOVES,
+    type: ActionTypes.GENERATE_CANDIDATE_ATTACK,
+    payload: { candidateAttack }
   }
 }
+
+export const clearCandidates = () => {
+  return {
+    type: ActionTypes.CLEAR_CANDIDATE,
+  }
+};

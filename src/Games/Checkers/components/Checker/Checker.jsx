@@ -1,5 +1,5 @@
 import arbiter from '../../arbiter/arbiter';
-import { generateCandidateMoves } from '../../reducer/actions/move';
+import { generateCandidateAttack, generateCandidateMoves } from '../../reducer/actions/move';
 import { useCheckersContext } from '../../reducer/Context';
 import './Checker.scss';
 
@@ -16,6 +16,8 @@ function Checker({ axisY, axisX, checker }) {
     }, 0);
     if (turn === checker.slice(0, 5)) {
       const candidateMoves = arbiter.getRegularMoves({ position: currentPosition, checker, axisY, axisX });
+      const candidateAttack = arbiter.getAttackingMoves({ position: currentPosition, checker, axisY, axisX });
+      dispatch(generateCandidateAttack({ candidateAttack }));
       dispatch(generateCandidateMoves({ candidateMoves }));
     }
   }
