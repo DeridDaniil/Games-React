@@ -4,7 +4,9 @@
 
 <details><summary><b>Скриншоты: </b></summary> 
 
-
+![TicTacToe-Image](https://github.com/DeridDaniil/Games-React/blob/main/public/TicTacToe.png?raw=true)
+![Chess-Image](https://github.com/DeridDaniil/Games-React/blob/main/public/Chess.png?raw=true)
+![Checkers-Image](https://github.com/DeridDaniil/Games-React/blob/main/public/Checkers.png?raw=true)
 
 </details>
 
@@ -31,8 +33,8 @@
 </br>
 
 ``` h2
-Игра "Шашки" - пока находится в разработке, но скоро она будет добавлена, как полностью рабочая игра.
-Продумана только логика движения шашек и их атаки.
+Игра "Шашки" - пока находится в разработке, но скоро она будет добавлена, как полностью
+рабочая игра. Продумана только логика движения шашек и их атаки.
 ```
 ``` h3
 Планы на проект:
