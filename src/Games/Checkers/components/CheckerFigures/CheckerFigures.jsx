@@ -21,20 +21,26 @@ function CheckerFigures() {
     const newPosition = position.map(axisY => axisY.map(axisX => axisX));
     const { y, x } = calculateCoords(e);
     const [axisY, axisX, checker] = e.dataTransfer.getData('text').split(', ');
+    const player = checker.slice(0, 5)
 
     if (checkersState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
       newPosition[axisY][axisX] = '';
-      newPosition[y][x] = checker;
-
-      if (checkersState.candidateAttack) {
-        checkersState.candidateAttack.forEach(candidate => {
-          if ((Number(axisY) + y) / 2 === candidate[0] &&
-            (Number(axisX) + x) / 2 === candidate[1]) {
-            newPosition[candidate[0]][candidate[1]] = '';
-          }
-        });
+      if ((player === 'white' && y === 7) || (player === 'black' && y === 0)) {
+        newPosition[y][x] = player + '-queen';
+      } else {
+        newPosition[y][x] = checker;
       }
 
+      if (checkersState.candidateAttack) {
+        const direction = [[1, -1], [1, 1], [-1, 1], [-1, -1]];
+        checkersState.candidateAttack.forEach(candidate => {
+          direction.forEach(dir => {
+            if (y + dir[0] === candidate[0] && x + dir[1] === candidate[1]) {
+              newPosition[candidate[0]][candidate[1]] = '';
+            }
+          })
+        });
+      }
       dispatch(makeNewMove({ newPosition }));
     }
     dispatch(clearCandidates());

@@ -4,6 +4,7 @@
   position: absolute;
   background-size: 150%;
   background-position: center;
+  background-repeat: no-repeat;
 
   &.white-checker {
     background-image: url('../../assets/white-checker.png');
@@ -11,6 +12,16 @@
 
   &.black-checker {
     background-image: url('../../assets/black-checker.png');
+  }
+
+  &.white-queen {
+    background-size: 90%;
+    background-image: url('../../assets/white-queen-checker.png');
+  }
+
+  &.black-queen {
+    background-size: 90%;
+    background-image: url('../../assets/black-queen-checker.png');
   }
 
   &.p-00 {transform: translate(0, 700%);}
