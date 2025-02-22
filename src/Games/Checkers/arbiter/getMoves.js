@@ -8,16 +8,18 @@ export const getCheckerMoves = ({ position, checker, axisY, axisX }) => {
 
   attackY.forEach(y => {
     moveX.forEach(x => {
-      if (axisY === 0 || axisY === 1 || axisY === 6 || axisY === 7) {
-        if (position[axisY + moveY][axisX + x] !== undefined && position[axisY + moveY][axisX + x].slice(0, 5) === enemy) {
-          if (position[axisY + moveY + moveY][axisX + x + x] !== undefined && !position[axisY + moveY + moveY][axisX + x + x]) {
-            moves.push([axisY + moveY + moveY, axisX + x + x]);
+      if ((isWhite && axisY !== 7) || (!isWhite && axisY !== 0)) {
+        if (axisY <= 1 || axisY >= 6) {
+          if (position[axisY + moveY][axisX + x] !== undefined && position[axisY + moveY][axisX + x].slice(0, 5) === enemy) {
+            if (position[axisY + moveY + moveY][axisX + x + x] !== undefined && !position[axisY + moveY + moveY][axisX + x + x]) {
+              moves.push([axisY + moveY + moveY, axisX + x + x]);
+            }
           }
-        }
-      } else {
-        if (position[axisY + y][axisX + x] !== undefined && position[axisY + y][axisX + x].slice(0, 5) === enemy) {
-          if (position[axisY + y + y][axisX + x + x] !== undefined && !position[axisY + y + y][axisX + x + x]) {
-            moves.push([axisY + y + y, axisX + x + x]);
+        } else {
+          if (position[axisY + y][axisX + x] !== undefined && position[axisY + y][axisX + x].slice(0, 5) === enemy) {
+            if (position[axisY + y + y][axisX + x + x] !== undefined && !position[axisY + y + y][axisX + x + x]) {
+              moves.push([axisY + y + y, axisX + x + x]);
+            }
           }
         }
       }
@@ -27,8 +29,10 @@ export const getCheckerMoves = ({ position, checker, axisY, axisX }) => {
   if (moves.length !== 0) return moves;
 
   moveX.forEach(x => {
-    if (position[axisY + moveY][axisX + x] !== undefined && !position[axisY + moveY][axisX + x]) {
-      moves.push([axisY + moveY, axisX + x]);
+    if ((isWhite && axisY !== 7) || (!isWhite && axisY !== 0)) {
+      if (position[axisY + moveY][axisX + x] !== undefined && !position[axisY + moveY][axisX + x]) {
+        moves.push([axisY + moveY, axisX + x]);
+      }
     }
   });
 
@@ -45,16 +49,18 @@ export const getCheckerAttack = ({ position, checker, axisY, axisX }) => {
 
   attackY.forEach(y => {
     moveX.forEach(x => {
-      if (axisY === 0 || axisY === 1 || axisY === 6 || axisY === 7) {
-        if (position[axisY + moveY][axisX + x] !== undefined && position[axisY + moveY][axisX + x].slice(0, 5) === enemy) {
-          if (position[axisY + moveY + moveY][axisX + x + x] !== undefined && !position[axisY + moveY + moveY][axisX + x + x]) {
-            moves.push([axisY + moveY, axisX + x]);
+      if ((isWhite && axisY !== 7) || (!isWhite && axisY !== 0)) {
+        if (axisY <= 1 || axisY >= 6) {
+          if (position[axisY + moveY][axisX + x] !== undefined && position[axisY + moveY][axisX + x].slice(0, 5) === enemy) {
+            if (position[axisY + moveY + moveY][axisX + x + x] !== undefined && !position[axisY + moveY + moveY][axisX + x + x]) {
+              moves.push([axisY + moveY, axisX + x]);
+            }
           }
-        }
-      } else {
-        if (position[axisY + y][axisX + x] !== undefined && position[axisY + y][axisX + x].slice(0, 5) === enemy) {
-          if (position[axisY + y + y][axisX + x + x] !== undefined && !position[axisY + y + y][axisX + x + x]) {
-            moves.push([axisY + y, axisX + x]);
+        } else {
+          if (position[axisY + y][axisX + x] !== undefined && position[axisY + y][axisX + x].slice(0, 5) === enemy) {
+            if (position[axisY + y + y][axisX + x + x] !== undefined && !position[axisY + y + y][axisX + x + x]) {
+              moves.push([axisY + y, axisX + x]);
+            }
           }
         }
       }
