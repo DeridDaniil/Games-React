@@ -10,6 +10,8 @@ import GameEnds from './components/Popup/GameEnds/GameEnds';
 import Control from './components/Control/Control';
 import MovesList from './components/Control/MovesList/MovesList';
 import TakeBack from './components/Control/TakeBack/TakeBack';
+import ResignControl from './components/Control/Resign/ResignControl';
+import ChessClock from './components/Clock/ChessClock';
 import './Chess.scss';
 
 function Chess() {
@@ -29,8 +31,12 @@ function Chess() {
           </Popup>
         </div>
         <Control>
+          <ChessClock />
           <MovesList />
-          <TakeBack />
+          <div className="control-actions">
+            <TakeBack />
+            <ResignControl />
+          </div>
         </Control>
       </div>
     </СhessContext.Provider>

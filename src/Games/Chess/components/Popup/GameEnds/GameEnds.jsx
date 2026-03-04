@@ -7,7 +7,10 @@ const GameEnds = ({ onClosePopup }) => {
   const { chessState: { status }, dispatch } = useChessContext();
   if (status === Status.ongoing || status === Status.promoting) return null;
 
-  const iswin = status.slice(6) === 'wins';
+  const lowerStatus = status.toLowerCase();
+  const isWin = lowerStatus.includes('wins');
+  const isWhiteWin = status.startsWith('White');
+
   const newGame = () => {
     dispatch(setupNewGame());
   }
@@ -15,9 +18,13 @@ const GameEnds = ({ onClosePopup }) => {
   return (
     <div className="game_ends">
       <div className="game_ends--inner">
-        <h1>{iswin ? status : 'Draw'}</h1>
-        <p>{!iswin && status}</p>
-        <div className={status}></div>
+        <h1>{isWin ? status : 'Draw'}</h1>
+        <p>{!isWin && status}</p>
+        {isWin ? (
+          <div className={`wins ${isWhiteWin ? 'White' : 'Black'}`}></div>
+        ) : (
+          <div className="draws"></div>
+        )}
         <button onClick={newGame}>New Game</button>
       </div>
     </div>

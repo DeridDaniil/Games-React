@@ -27,9 +27,22 @@ export const detectCheckmate = (winner) => {
   }
 }
 
+export const startClock = () => {
+  return {
+    type: ActionTypes.START_CLOCK,
+  }
+}
+
 export const setupNewGame = () => {
   return {
     type: ActionTypes.NEW_GAME,
     payload: initChessGame
+  }
+}
+
+export const tickClock = (delta = 1000) => {
+  return {
+    type: ActionTypes.TICK,
+    payload: { delta }
   }
 }

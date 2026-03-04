@@ -1,0 +1,203 @@
+// ── Design tokens ──
+$clock-bg: rgba(10, 10, 18, 0.3);
+$clock-border: rgba(255, 255, 255, 0.08);
+$clock-radius: 14px;
+
+$card-radius: 10px;
+
+$white-accent: #e2c277;
+$white-bg: linear-gradient(145deg, rgba(226, 194, 119, 0.12) 0%, rgba(226, 194, 119, 0.04) 100%);
+$white-border: rgba(226, 194, 119, 0.25);
+$white-glow: 0 0 20px rgba(226, 194, 119, 0.25), inset 0 1px 0 rgba(226, 194, 119, 0.15);
+
+$black-accent: #a0b4c8;
+$black-bg: linear-gradient(145deg, rgba(160, 180, 200, 0.10) 0%, rgba(160, 180, 200, 0.03) 100%);
+$black-border: rgba(160, 180, 200, 0.20);
+$black-glow: 0 0 20px rgba(160, 180, 200, 0.20), inset 0 1px 0 rgba(160, 180, 200, 0.12);
+
+$low-color: #f59e0b;
+$critical-color: #ef4444;
+
+$font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+// ── Keyframes ──
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  60% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+
+// ── Clock container ──
+.chess-clock {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: $clock-radius;
+  border: 1px solid $clock-border;
+  background: $clock-bg;
+  backdrop-filter: blur(12px);
+}
+
+// ── VS divider ──
+.chess-clock__vs {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+// ── Timer card ──
+.timer-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: $card-radius;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+  // ── Color variants ──
+  &--white {
+    border-color: rgba(226, 194, 119, 0.08);
+
+
+    .timer-card__label { color: rgba(226, 194, 119, 0.7); }
+    .timer-card__display { color: rgba(255, 255, 255, 0.9); }
+    .timer-card__bar-fill { background: $white-accent; }
+    .timer-card__live-dot { background: $white-accent; }
+
+    &.timer-card--active {
+      background: $white-bg;
+      border-color: $white-border;
+      box-shadow: $white-glow;
+
+      .timer-card__display { color: #fff; }
+      .timer-card__label { color: $white-accent; }
+    }
+  }
+
+  &--black {
+    border-color: rgba(160, 180, 200, 0.06);
+
+    .timer-card__label { color: rgba(160, 180, 200, 0.6); }
+    .timer-card__display { color: rgba(255, 255, 255, 0.85); }
+    .timer-card__bar-fill { background: $black-accent; }
+    .timer-card__live-dot { background: $black-accent; }
+
+    &.timer-card--active {
+      background: $black-bg;
+      border-color: $black-border;
+      box-shadow: $black-glow;
+
+      .timer-card__display { color: #fff; }
+      .timer-card__label { color: $black-accent; }
+    }
+  }
+
+  // ── Low time warning ──
+  &--low {
+    .timer-card__bar-fill { background: $low-color !important; }
+    .timer-card__display { color: $low-color !important; }
+  }
+
+  // ── Critical time ──
+  &--critical {
+    animation: shake 0.4s ease-in-out;
+
+    .timer-card__bar-fill { background: $critical-color !important; }
+    .timer-card__display { color: $critical-color !important; }
+
+    &.timer-card--active {
+      border-color: rgba(239, 68, 68, 0.35) !important;
+      box-shadow: 0 0 24px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(239, 68, 68, 0.12) !important;
+      animation: pulse-glow 1s ease-in-out infinite, shake 0.4s ease-in-out;
+    }
+  }
+}
+
+// ── Card header ──
+.timer-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-card__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: color 0.3s ease;
+  line-height: 1.1;
+}
+
+.timer-card__live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: auto;
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
+// ── Time display ──
+.timer-card__display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  font-family: $font-mono;
+  transition: color 0.3s ease;
+}
+
+.timer-card__digit {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.timer-card__separator {
+  font-size: 1.4rem;
+  font-weight: 400;
+  opacity: 0.5;
+  line-height: 1;
+}
+
+.timer-card--active .timer-card__separator {
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+// ── Progress bar ──
+.timer-card__bar-track {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.timer-card__bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s linear, background 0.4s ease;
+}

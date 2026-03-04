@@ -1,0 +1,16 @@
+@import '../TakeBack/TakeBack.scss';
+
+.resign {
+  @extend .take-back;
+  border-color: rgba(255, 99, 71, 0.4);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 99, 71, 0.22),
+    rgba(255, 255, 255, 0)
+  );
+
+  span::after {
+    background-color: rgba(255, 220, 220, 0.9);
+  }
+}
+

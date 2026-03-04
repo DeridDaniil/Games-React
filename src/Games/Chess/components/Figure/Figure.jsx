@@ -1,12 +1,13 @@
 import arbiter from '../../arbiter/arbiter';
 import { generateCandidateMoves } from '../../reducer/actions/move';
 import { useChessContext } from '../../reducer/Context';
+import { startClock } from '../../reducer/actions/game';
 import './Figure.scss';
 
 function Figure({ axisY, axisX, figure }) {
 
   const { chessState, dispatch } = useChessContext();
-  const { turn, position, castleDirection } = chessState;
+  const { turn, position, castleDirection, clockStarted } = chessState;
   const currentPosition = position[position.length - 1];
   const prevPosition = position[position.length - 2];
 
@@ -17,6 +18,9 @@ function Figure({ axisY, axisX, figure }) {
       e.target.style.display = 'none';
     }, 0);
     if (turn === figure.slice(0, 5)) {
+      if (!clockStarted) {
+        dispatch(startClock());
+      }
       const candidateMoves = arbiter.getValidMoves({
         position: currentPosition,
         prevPosition,
