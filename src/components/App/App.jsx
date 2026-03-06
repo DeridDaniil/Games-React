@@ -1,3 +1,4 @@
+import { Routes, Route, Navigate } from "react-router-dom";
 import Navigation from "../Navigation/Navigation";
 import TicTacToe from "../../Games/TicTacToe/TicTacToe";
 import Chess from "../../Games/Chess/Chess";
@@ -9,9 +10,12 @@ function App() {
   return (
     <div className="app">
       <Navigation />
-      <TicTacToe />
-      <Chess />
-      <Checkers />
+      <Routes>
+        <Route path="/tictactoe" element={<TicTacToe />} />
+        <Route path="/chess" element={<Chess />} />
+        <Route path="/checkers" element={<Checkers />} />
+        <Route path="*" element={<Navigate to="/tictactoe" replace />} />
+      </Routes>
     </div>
   )
 }

@@ -1,14 +1,18 @@
 .chess {
-  min-height: 100vh;
-  text-align: center;
-  display: grid;
-  grid-template: min-content 1fr / 1fr 310px;
-  column-gap: 20px;
-  margin: 0 auto;
   position: relative;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 
   h1 {
     grid-column: span 2;
+  }
+
+  .chess-box {
+    display: grid;
+    grid-template: min-content 1fr / 1fr 310px;
+    column-gap: 20px;
   }
 
   .chess-container {

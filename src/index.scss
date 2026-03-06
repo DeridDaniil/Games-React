@@ -11,7 +11,8 @@ $font-body: 'Nunito', sans-serif;
 }
 
 #root {
-  max-width: 100%;
+  width: 100%;
+  height: 100vh;
   background: linear-gradient(117deg, rgba(36, 36, 36, 1) 0%, rgba(0, 52, 62, 1) 100%);
 }
 
@@ -20,7 +21,6 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  scroll-behavior: smooth;
 }
 
 h1, h2, h3, h4, h5, h6 {

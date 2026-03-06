@@ -1,9 +1,9 @@
 import { createContext, useContext } from "react";
 
-const СhessContext = createContext();
+const ChessContext = createContext();
 
 export const useChessContext = () => {
-  return useContext(СhessContext);
+  return useContext(ChessContext);
 };
 
-export default СhessContext;
+export default ChessContext;

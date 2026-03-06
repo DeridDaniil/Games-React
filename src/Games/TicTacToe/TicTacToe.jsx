@@ -25,12 +25,12 @@ function TicTacToe() {
   const gameEnding = () => {
     if (!cells.some(cell => cell === ' ')) {
       setIsGameEnd(true);
-      setGameEnd('Ничья')
+      setGameEnd('Draw')
     };
     winnerCombination.forEach(combo => {
       if (cells[combo[0]] === cells[combo[1]] && cells[combo[1]] === cells[combo[2]] && cells[combo[0]] !== ' ') {
         setIsGameEnd(true);
-        setGameEnd(`Победитель - ${cells[combo[0]]}`);
+        setGameEnd(`Winner - ${cells[combo[0]]}`);
       }
     });
   }
@@ -50,10 +50,10 @@ function TicTacToe() {
   }
 
   return (
-    <div id='tictactoe' className="tictactoe">
-      <h1>Крестики нолики</h1>
+    <div className="tictactoe">
+      <h1>Tic Tac Toe</h1>
       <div className="container">
-        <h2>{isgameEnd ? 'Конец игры' : `Ход игрока - ${player}`}</h2>
+        <h2>{isgameEnd ? 'Game Over' : `Player's Move - ${player}`}</h2>
         <div className="cells">
           {cells.map((value, i) => (
             <div
@@ -68,7 +68,7 @@ function TicTacToe() {
           )}
         </div>
         <button onClick={restartGame}>
-          <span>Заново</span>
+          <span>Restart</span>
         </button>
       </div>
     </div>

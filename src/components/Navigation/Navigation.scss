@@ -1,11 +1,25 @@
-.tabs-container {
+$glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+$glass-border: 1px solid rgba(255, 255, 255, 0.08);
+$glass-blur: blur(10px);
+$accent-color: #00796b;
+$radius-lg: 20px;
+$radius-md: 12px;
+
+.nav-wrapper {
   position: fixed;
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   margin: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+}
+
+.tabs-container {
+  border: $glass-border;
+  border-radius: $radius-lg;
   padding: 5px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-  backdrop-filter: blur(10px);
+  background: $glass-bg;
+  backdrop-filter: $glass-blur;
 }
 
 .tabs {
@@ -19,7 +33,7 @@
   width: 45px;
   height: 45px;
   padding: 15px 20px;
-  color: #00796b;
+  color: $accent-color;
   font-weight: 500;
   font-size: 20px;
   text-align: center;
@@ -37,7 +51,7 @@
     color: white;
   }
 
-  &.tictactoe-logo{
+  &.tictactoe-logo {
     background-image: url("../../../public/tictactoe-logo.png");
     background-size: 75%;
   }
@@ -46,8 +60,43 @@
     background-image: url("../../../public/chess-logo.png");
   }
 
-  &.checkers-logo{
+  &.checkers-logo {
     background-image: url("../../../public/checkers-logo.png");
+  }
+}
+
+.tab-actions {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border: $glass-border;
+  border-radius: $radius-md;
+  background: $glass-bg;
+  backdrop-filter: $glass-blur;
+}
+
+.tab-action-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
   }
 }
 
@@ -55,11 +104,12 @@
   position: absolute;
   left: 0;
   z-index: -1;
-  width: 100%;
+  width: 0;
   height: 0;
-  border-radius: 20px;
-  background-color: #00796b;
+  border-radius: $radius-lg;
+  background-color: $accent-color;
   transition:
     top 0.3s ease,
+    width 0.3s ease,
     height 0.3s ease;
 }

@@ -1,7 +1,7 @@
 $close-duration: 0.25s;
 $open-duration: 0.3s;
 
-.resign-modal {
+.surrender-modal {
   position: absolute;
   inset: 0;
   display: flex;
@@ -9,7 +9,7 @@ $open-duration: 0.3s;
   justify-content: center;
   z-index: 20;
 
-  .resign-modal__backdrop {
+  .surrender-modal__backdrop {
     position: absolute;
     inset: 0;
     width: 500%;
@@ -18,7 +18,7 @@ $open-duration: 0.3s;
     animation: backdrop-fade-in $open-duration ease-out forwards;
   }
 
-  .resign-modal__content {
+  .surrender-modal__content {
     position: relative;
     max-width: 420px;
     width: 90%;
@@ -37,25 +37,25 @@ $open-duration: 0.3s;
     animation: content-appear $open-duration cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
-  .resign-modal__title {
+  .surrender-modal__title {
     margin: 0 0 12px;
     font-size: 1.6rem;
   }
 
-  .resign-modal__message {
+  .surrender-modal__message {
     margin: 0 0 24px;
     font-size: 1rem;
     line-height: 1.5;
     opacity: 0.9;
   }
 
-  .resign-modal__actions {
+  .surrender-modal__actions {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
   }
 
-  .resign-modal__button {
+  .surrender-modal__button {
     position: relative;
     overflow: hidden;
     padding: 10px 20px;
@@ -80,16 +80,16 @@ $open-duration: 0.3s;
     }
   }
 
-  .resign-modal__button--cancel {
+  .surrender-modal__button--cancel {
     background: rgba(255, 255, 255, 0.03);
   }
 
-  .resign-modal__button--confirm {
+  .surrender-modal__button--confirm {
     border-color: rgba(255, 99, 71, 0.7);
     background: rgba(255, 99, 71, 0.22);
   }
 
-  .resign-modal__button--confirm::before {
+  .surrender-modal__button--confirm::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -103,31 +103,31 @@ $open-duration: 0.3s;
     pointer-events: none;
   }
 
-  .resign-modal__button--waiting {
+  .surrender-modal__button--waiting {
     cursor: not-allowed;
     opacity: 0.8;
   }
 
-  .resign-modal__button--waiting::before {
-    animation: resign-fill 2s linear forwards;
+  .surrender-modal__button--waiting::before {
+    animation: surrender-fill 2s linear forwards;
   }
 
-  .resign-modal__button--active {
+  .surrender-modal__button--active {
     background: rgba(255, 99, 71, 0.32);
   }
 
-  .resign-modal__button--active::before {
+  .surrender-modal__button--active::before {
     width: 100%;
     opacity: 0;
   }
 
   // --- Closing animations ---
-  &.resign-modal--closing {
-    .resign-modal__backdrop {
+  &.surrender-modal--closing {
+    .surrender-modal__backdrop {
       animation: backdrop-fade-out $close-duration ease-in forwards;
     }
 
-    .resign-modal__content {
+    .surrender-modal__content {
       animation: content-disappear $close-duration ease-in forwards;
     }
   }
@@ -175,7 +175,7 @@ $open-duration: 0.3s;
   }
 }
 
-@keyframes resign-fill {
+@keyframes surrender-fill {
   from {
     width: 0%;
   }

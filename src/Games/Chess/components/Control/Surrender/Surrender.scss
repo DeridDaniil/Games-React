@@ -1,8 +1,9 @@
 @import '../TakeBack/TakeBack.scss';
 
-.resign {
+.surrender {
   @extend .take-back;
   border-color: rgba(255, 99, 71, 0.4);
+  text-align: center;
   background: linear-gradient(
     135deg,
     rgba(255, 99, 71, 0.22),

@@ -12,8 +12,8 @@ function Checkers() {
 
   return (
     <CheckersContext.Provider value={checkersProviderState}>
-      <div id='checkers' className="checkers">
-        <h1>Шашки</h1>
+      <div className="checkers">
+        <h1>Checkers</h1>
         <div className="checkers-container">
           <Board />
           <CheckerFigures />
