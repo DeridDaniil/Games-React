@@ -1,0 +1,75 @@
+.checkers-game-ends {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.75);
+  z-index: 10;
+  border-radius: 20px;
+
+  .checkers-game-ends--inner {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+
+    h1 {
+      margin: 0;
+      padding: 0;
+      line-height: normal;
+    }
+
+    .draws {
+      height: 90px;
+      width: 180px;
+      background-repeat: no-repeat, no-repeat;
+      background-size: contain;
+      background-position: left, right;
+      background-image: url('../../assets/white-checker.png'), url('../../assets/black-checker.png');
+    }
+
+    .wins {
+      height: 90px;
+      width: 90px;
+      margin-top: 20px;
+      background-position: center;
+      background-size: contain;
+      background-repeat: no-repeat;
+
+      &.white {
+        background-image: url("../../assets/white-checker.png");
+      }
+      &.black {
+        background-image: url("../../assets/black-checker.png");
+      }
+    }
+
+    button {
+      margin-top: 40px;
+      position: relative;
+      border: none;
+      border-bottom: 2px solid white;
+      color: inherit;
+      font-family: inherit;
+      font-size: 24px;
+      background-color: transparent;
+      animation: checkersAnimButton 1.7s ease-in-out infinite;
+      cursor: pointer;
+    }
+  }
+}
+
+@keyframes checkersAnimButton {
+  0% {
+    scale: 1;
+  }
+
+  50% {
+    scale: 1.2;
+  }
+
+  100% {
+    scale: 1;
+  }
+}

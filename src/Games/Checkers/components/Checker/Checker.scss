@@ -95,4 +95,20 @@
   &.p-77 {transform: translate(700%, 0);}
   &.p-75 {transform: translate(500%, 0);}
   &.p-76 {transform: translate(600%, 0);}
+
+
+
+  &.capture-blocked {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+@keyframes forced-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px 4px rgba(255, 50, 50, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 20px 8px rgba(255, 50, 50, 1);
+  }
 }

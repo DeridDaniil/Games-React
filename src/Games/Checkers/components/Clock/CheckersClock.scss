@@ -1,0 +1,202 @@
+// ── Design tokens ──
+$clock-bg: rgba(10, 10, 18, 0.3);
+$clock-border: rgba(255, 255, 255, 0.08);
+$clock-radius: 14px;
+
+$card-radius: 10px;
+
+$white-accent: #e2c277;
+$white-bg: linear-gradient(145deg, rgba(226, 194, 119, 0.12) 0%, rgba(226, 194, 119, 0.04) 100%);
+$white-border: rgba(226, 194, 119, 0.25);
+$white-glow: 0 0 20px rgba(226, 194, 119, 0.25), inset 0 1px 0 rgba(226, 194, 119, 0.15);
+
+$black-accent: #a0b4c8;
+$black-bg: linear-gradient(145deg, rgba(160, 180, 200, 0.10) 0%, rgba(160, 180, 200, 0.03) 100%);
+$black-border: rgba(160, 180, 200, 0.20);
+$black-glow: 0 0 20px rgba(160, 180, 200, 0.20), inset 0 1px 0 rgba(160, 180, 200, 0.12);
+
+$low-color: #f59e0b;
+$critical-color: #ef4444;
+
+$font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+// ── Keyframes ──
+@keyframes checkers-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+@keyframes checkers-pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes checkers-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  60% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+
+// ── Clock container ──
+.checkers-clock {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: $clock-radius;
+  border: 1px solid $clock-border;
+  background: $clock-bg;
+  backdrop-filter: blur(12px);
+}
+
+// ── VS divider ──
+.checkers-clock__vs {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+// ── Timer card ──
+.checkers-timer-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: $card-radius;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+  // ── Color variants ──
+  &--white {
+    border-color: rgba(226, 194, 119, 0.08);
+
+    .checkers-timer-card__label { color: rgba(226, 194, 119, 0.7); }
+    .checkers-timer-card__display { color: rgba(255, 255, 255, 0.9); }
+    .checkers-timer-card__bar-fill { background: $white-accent; }
+    .checkers-timer-card__live-dot { background: $white-accent; }
+
+    &.checkers-timer-card--active {
+      background: $white-bg;
+      border-color: $white-border;
+      box-shadow: $white-glow;
+
+      .checkers-timer-card__display { color: #fff; }
+      .checkers-timer-card__label { color: $white-accent; }
+    }
+  }
+
+  &--black {
+    border-color: rgba(160, 180, 200, 0.06);
+
+    .checkers-timer-card__label { color: rgba(160, 180, 200, 0.6); }
+    .checkers-timer-card__display { color: rgba(255, 255, 255, 0.85); }
+    .checkers-timer-card__bar-fill { background: $black-accent; }
+    .checkers-timer-card__live-dot { background: $black-accent; }
+
+    &.checkers-timer-card--active {
+      background: $black-bg;
+      border-color: $black-border;
+      box-shadow: $black-glow;
+
+      .checkers-timer-card__display { color: #fff; }
+      .checkers-timer-card__label { color: $black-accent; }
+    }
+  }
+
+  // ── Low time warning ──
+  &--low {
+    .checkers-timer-card__bar-fill { background: $low-color !important; }
+    .checkers-timer-card__display { color: $low-color !important; }
+  }
+
+  // ── Critical time ──
+  &--critical {
+    animation: checkers-shake 0.4s ease-in-out;
+
+    .checkers-timer-card__bar-fill { background: $critical-color !important; }
+    .checkers-timer-card__display { color: $critical-color !important; }
+
+    &.checkers-timer-card--active {
+      border-color: rgba(239, 68, 68, 0.35) !important;
+      box-shadow: 0 0 24px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(239, 68, 68, 0.12) !important;
+      animation: checkers-pulse-glow 1s ease-in-out infinite, checkers-shake 0.4s ease-in-out;
+    }
+  }
+}
+
+// ── Card header ──
+.checkers-timer-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkers-timer-card__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: color 0.3s ease;
+  line-height: 1.1;
+}
+
+.checkers-timer-card__live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: auto;
+  animation: checkers-pulse-dot 1.2s ease-in-out infinite;
+}
+
+// ── Time display ──
+.checkers-timer-card__display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  font-family: $font-mono;
+  transition: color 0.3s ease;
+}
+
+.checkers-timer-card__digit {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.checkers-timer-card__separator {
+  font-size: 1.4rem;
+  font-weight: 400;
+  opacity: 0.5;
+  line-height: 1;
+}
+
+.checkers-timer-card--active .checkers-timer-card__separator {
+  animation: checkers-pulse-dot 1s ease-in-out infinite;
+}
+
+// ── Progress bar ──
+.checkers-timer-card__bar-track {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.checkers-timer-card__bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s linear, background 0.4s ease;
+}

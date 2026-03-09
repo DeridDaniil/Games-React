@@ -1,8 +1,17 @@
 import { useRef } from 'react';
 import Checker from '../Checker/Checker';
 import { useCheckersContext } from '../../reducer/Context';
-import { clearCandidates, makeNewMove } from '../../reducer/actions/move';
+import { clearCandidates, makeNewMove, continueCapture, startClock } from '../../reducer/actions/move';
+import arbiter from '../../arbiter/arbiter';
 import './CheckerFigures.scss';
+
+const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+const getMoveNotation = (fromY, fromX, toY, toX, isCapture) => {
+  const from = files[fromX] + (fromY + 1);
+  const to = files[toX] + (toY + 1);
+  return isCapture ? `${from}x${to}` : `${from}-${to}`;
+};
 
 function CheckerFigures() {
   const { checkersState, dispatch } = useCheckersContext();
@@ -25,23 +34,41 @@ function CheckerFigures() {
 
     if (checkersState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
       newPosition[axisY][axisX] = '';
+      let landedPiece = checker;
       if ((player === 'white' && y === 7) || (player === 'black' && y === 0)) {
-        newPosition[y][x] = player + '-queen';
-      } else {
-        newPosition[y][x] = checker;
+        landedPiece = player + '-queen';
       }
+      newPosition[y][x] = landedPiece;
 
-      if (checkersState.candidateAttack) {
+      let wasCapture = false;
+      if (checkersState.candidateAttack && checkersState.candidateAttack.length > 0) {
         const direction = [[1, -1], [1, 1], [-1, 1], [-1, -1]];
         checkersState.candidateAttack.forEach(candidate => {
           direction.forEach(dir => {
             if (y + dir[0] === candidate[0] && x + dir[1] === candidate[1]) {
               newPosition[candidate[0]][candidate[1]] = '';
+              wasCapture = true;
             }
           })
         });
       }
-      dispatch(makeNewMove({ newPosition }));
+
+      const newMove = getMoveNotation(Number(axisY), Number(axisX), y, x, wasCapture);
+
+      if (!checkersState.clockStarted) {
+        dispatch(startClock());
+      }
+
+      if (wasCapture) {
+        const furtherAttacks = arbiter.getAttackingMoves({ position: newPosition, checker: landedPiece, axisY: y, axisX: x });
+        if (furtherAttacks.length > 0) {
+          dispatch(continueCapture({ newPosition, chainCapturePiece: [y, x], newMove }));
+          dispatch(clearCandidates());
+          return;
+        }
+      }
+
+      dispatch(makeNewMove({ newPosition, newMove }));
     }
     dispatch(clearCandidates());
   }
