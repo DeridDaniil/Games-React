@@ -52,16 +52,16 @@ $radius-md: 12px;
   }
 
   &.tictactoe-logo {
-    background-image: url("../../../public/tictactoe-logo.png");
+    background-image: url("/tictactoe-logo.png");
     background-size: 75%;
   }
 
   &.chess-logo {
-    background-image: url("../../../public/chess-logo.png");
+    background-image: url("/chess-logo.png");
   }
 
   &.checkers-logo {
-    background-image: url("../../../public/checkers-logo.png");
+    background-image: url("/checkers-logo.png");
   }
 }
 
