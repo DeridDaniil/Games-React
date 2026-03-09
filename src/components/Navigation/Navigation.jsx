@@ -1,14 +1,15 @@
 import { useRef, useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { Info, Settings } from 'lucide-react';
+import { useProfile } from '../../profile/ProfileContext';
 import Modal from '../Modal/Modal';
-import TicTacToeInfo from '../../Games/TicTacToe/TicTacToeInfo';
-import TicTacToeSettings from '../../Games/TicTacToe/TicTacToeSettings';
-import ChessInfo from '../../Games/Chess/ChessInfo';
-import ChessSettings from '../../Games/Chess/ChessSettings';
-import CheckersInfo from '../../Games/Checkers/CheckersInfo';
-import CheckersSettings from '../../Games/Checkers/CheckersSettings';
+import TicTacToeInfo from '../../Games/TicTacToe/Info/TicTacToeInfo';
+import TicTacToeSettings from '../../Games/TicTacToe/Settings/TicTacToeSettings';
+import ChessInfo from '../../Games/Chess/Info/ChessInfo';
+import ChessSettings from '../../Games/Chess/Settings/ChessSettings';
+import CheckersInfo from '../../Games/Checkers/Info/CheckersInfo';
+import CheckersSettings from '../../Games/Checkers/Settings/CheckersSettings';
 import './Navigation.scss';
 
 const tabs = ['tictactoe', 'chess', 'checkers'];
@@ -34,6 +35,8 @@ const gameConfig = {
 function Navigation() {
   const tabsRef = useRef([]);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { profile } = useProfile();
   const activeTab = tabs.find(tab => location.pathname === `/${tab}`);
   const activeIndex = tabs.indexOf(activeTab);
 
@@ -45,14 +48,15 @@ function Navigation() {
 
   useEffect(() => {
     const indicator = document.querySelector('.active-indicator');
-    const idx = activeIndex >= 0 ? activeIndex : 0;
-    if (indicator && tabsRef.current[idx]) {
-      const activeTabEl = tabsRef.current[idx];
+    if (indicator && activeIndex >= 0 && tabsRef.current[activeIndex]) {
+      const activeTabEl = tabsRef.current[activeIndex];
       indicator.style.top = `${activeTabEl.offsetTop}px`;
       indicator.style.width = `${activeTabEl.offsetWidth}px`;
       indicator.style.height = `${activeTabEl.offsetHeight}px`;
+      indicator.style.opacity = '1';
       setActiveTabTop(activeTabEl.offsetTop);
-    } else {
+    } else if (indicator) {
+      indicator.style.opacity = '0';
       setActiveTabTop(null);
     }
   }, [activeIndex]);
@@ -109,6 +113,14 @@ function Navigation() {
           )}
         </AnimatePresence>
       </div>
+
+      <button
+        className={`profile-avatar-btn ${location.pathname === '/profile' ? 'active' : ''}`}
+        onClick={() => navigate('/profile')}
+        title={profile?.name || 'Profile'}
+      >
+        <img src={profile?.avatar} alt="avatar" />
+      </button>
 
       {config && (
         <>

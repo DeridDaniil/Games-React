@@ -100,6 +100,43 @@ $radius-md: 12px;
   }
 }
 
+.profile-avatar-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.08);
+  }
+
+  &.active {
+    border-color: $accent-color;
+  }
+}
+
 .active-indicator {
   position: absolute;
   left: 0;
