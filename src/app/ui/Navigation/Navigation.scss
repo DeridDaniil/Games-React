@@ -1,0 +1,152 @@
+$glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+$glass-border: 1px solid rgba(255, 255, 255, 0.08);
+$glass-blur: blur(10px);
+$accent-color: #00796b;
+$radius-lg: 20px;
+$radius-md: 12px;
+
+.nav-wrapper {
+  position: fixed;
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 20px;
+}
+
+.tabs-container {
+  border: $glass-border;
+  border-radius: $radius-lg;
+  padding: 5px;
+  background: $glass-bg;
+  backdrop-filter: $glass-blur;
+}
+
+.tabs {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.tab {
+  width: 45px;
+  height: 45px;
+  padding: 15px 20px;
+  color: $accent-color;
+  font-weight: 500;
+  font-size: 20px;
+  text-align: center;
+  text-decoration: none;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: white;
+  }
+
+  &.active {
+    color: white;
+  }
+
+  &.tictactoe-logo {
+    background-image: url("../../../shared/assets/images/tictactoe-logo.png");
+    background-size: 75%;
+  }
+
+  &.chess-logo {
+    background-image: url("../../../shared/assets/images/chess-logo.png");
+  }
+
+  &.checkers-logo {
+    background-image: url("../../../shared/assets/images/checkers-logo.png");
+  }
+}
+
+.tab-actions {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border: $glass-border;
+  border-radius: $radius-md;
+  background: $glass-bg;
+  backdrop-filter: $glass-blur;
+}
+
+.tab-action-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+}
+
+.profile-avatar-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.08);
+  }
+
+  &.active {
+    border-color: $accent-color;
+  }
+}
+
+.active-indicator {
+  position: absolute;
+  left: 0;
+  z-index: -1;
+  width: 0;
+  height: 0;
+  border-radius: $radius-lg;
+  background-color: $accent-color;
+  transition:
+    top 0.3s ease,
+    width 0.3s ease,
+    height 0.3s ease;
+}

@@ -1,0 +1,48 @@
+import arbiter from '../../lib/arbiter/arbiter';
+import { generateCandidateMoves } from '../../model/actions/move';
+import { useChessContext } from '../../model/Context';
+import { startClock } from '../../model/actions/game';
+import './Figure.scss';
+
+function Figure({ axisY, axisX, figure }) {
+
+  const { chessState, dispatch } = useChessContext();
+  const { turn, position, castleDirection, clockStarted } = chessState;
+  const currentPosition = position[position.length - 1];
+  const prevPosition = position[position.length - 2];
+
+  const onDragStart = e => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', `${figure}, ${axisY}, ${axisX}`);
+    setTimeout(() => {
+      e.target.style.display = 'none';
+    }, 0);
+    if (turn === figure.slice(0, 5)) {
+      if (!clockStarted) {
+        dispatch(startClock());
+      }
+      const candidateMoves = arbiter.getValidMoves({
+        position: currentPosition,
+        prevPosition,
+        castleDirection: castleDirection[turn],
+        figure,
+        axisY,
+        axisX
+      });
+      dispatch(generateCandidateMoves({ candidateMoves }));
+    }
+  }
+
+  const onDragEnd = e => e.target.style.display = 'block';
+
+  return (
+    <div
+      className={`figure ${figure} p-${axisY}${axisX}`}
+      draggable={true}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+    />
+  )
+}
+
+export default Figure;

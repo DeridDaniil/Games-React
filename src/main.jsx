@@ -1,19 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HashRouter } from 'react-router-dom'
-import { ProfileProvider } from './profile/ProfileContext'
-import { TicTacToeSettingsProvider } from './Games/TicTacToe/context/TicTacToeSettingsContext'
-import './index.scss'
-import App from './components/App/App'
+import AppProviders from './app/providers/AppProviders'
+import './shared/styles/globals.scss'
+import App from './app/App'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <HashRouter>
-      <ProfileProvider>
-        <TicTacToeSettingsProvider>
-          <App />
-        </TicTacToeSettingsProvider>
-      </ProfileProvider>
-    </HashRouter>
+    <AppProviders>
+      <App />
+    </AppProviders>
   </StrictMode>,
 )

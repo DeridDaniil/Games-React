@@ -25,4 +25,7 @@ export default defineConfig({
       },
     },
   },
+  test: {
+    setupFiles: ['./vitest.setup.js'],
+  },
 })

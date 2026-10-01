@@ -1,0 +1,21 @@
+.game-layout {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-layout__body {
+  display: grid;
+  grid-template: min-content 1fr / 1fr 310px;
+  column-gap: 20px;
+}
+
+.game-layout__board {
+  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: max-content;
+}

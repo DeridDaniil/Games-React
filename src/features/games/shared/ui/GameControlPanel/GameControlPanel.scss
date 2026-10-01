@@ -1,0 +1,14 @@
+.game-control-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 762px;
+  width: 100%;
+  row-gap: 20px;
+}
+
+.game-control-panel__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
