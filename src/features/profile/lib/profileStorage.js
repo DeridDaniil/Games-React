@@ -1,4 +1,4 @@
-import { defaultAvatar } from './constants';
+import { defaultAvatar, normalizeAvatar } from './avatar';
 
 const USERS_KEY = 'games-react-users';
 const SESSION_KEY = 'games-react-session';
@@ -47,7 +47,7 @@ export function login(login, password) {
   if (!user) return { error: 'User not found' };
   if (user.password !== password) return { error: 'Wrong password' };
   localStorage.setItem(SESSION_KEY, key);
-  return { profile: { ...user, stats: { ...defaultStats, ...user.stats } } };
+  return { profile: { ...user, avatar: normalizeAvatar(user.avatar), stats: { ...defaultStats, ...user.stats } } };
 }
 
 export function logout() {
@@ -61,7 +61,7 @@ export function loadSession() {
     const users = loadUsers();
     const user = users[key];
     if (!user) return null;
-    return { ...user, stats: { ...defaultStats, ...user.stats } };
+    return { ...user, avatar: normalizeAvatar(user.avatar), stats: { ...defaultStats, ...user.stats } };
   } catch {
     return null;
   }

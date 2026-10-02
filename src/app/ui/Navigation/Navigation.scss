@@ -1,152 +1,176 @@
-$glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-$glass-border: 1px solid rgba(255, 255, 255, 0.08);
-$glass-blur: blur(10px);
-$accent-color: #00796b;
-$radius-lg: 20px;
-$radius-md: 12px;
+@use '../../../shared/styles/breakpoints' as bp;
 
-.nav-wrapper {
-  position: fixed;
-  z-index: 10;
+// A rail one step lighter than the room; the current game sits on a translucent sage tile with a dot.
+.app-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 20px;
+  flex-direction: column;
+  gap: var(--space-1);
+  height: 100vh;
+  height: 100dvh;
+  padding: var(--space-5) var(--space-2) var(--space-4);
+  border-right: 1px solid var(--color-border);
+  background-color: var(--color-bg-elevated);
 }
 
-.tabs-container {
-  border: $glass-border;
-  border-radius: $radius-lg;
-  padding: 5px;
-  background: $glass-bg;
-  backdrop-filter: $glass-blur;
+.app-nav__mark {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+  color: var(--color-accent);
 }
 
-.tabs {
+.app-nav__mark-warm {
+  fill: var(--color-warm);
+}
+
+.app-nav__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-nav__link {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-}
-
-.tab {
-  width: 45px;
-  height: 45px;
-  padding: 15px 20px;
-  color: $accent-color;
-  font-weight: 500;
-  font-size: 20px;
-  text-align: center;
-  text-decoration: none;
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  transition: color 0.3s ease;
-
-  &:hover {
-    color: white;
-  }
-
-  &.active {
-    color: white;
-  }
-
-  &.tictactoe-logo {
-    background-image: url("../../../shared/assets/images/tictactoe-logo.png");
-    background-size: 75%;
-  }
-
-  &.chess-logo {
-    background-image: url("../../../shared/assets/images/chess-logo.png");
-  }
-
-  &.checkers-logo {
-    background-image: url("../../../shared/assets/images/checkers-logo.png");
-  }
-}
-
-.tab-actions {
-  position: relative;
-  display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px;
-  border: $glass-border;
-  border-radius: $radius-md;
-  background: $glass-bg;
-  backdrop-filter: $glass-blur;
-}
-
-.tab-action-btn {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: white;
-  }
-}
-
-.profile-avatar-btn {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  border-radius: 50%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-  backdrop-filter: blur(10px);
-  cursor: pointer;
-  transition: border-color 0.2s, transform 0.15s;
-  overflow: hidden;
-
-  img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    display: block;
-  }
-
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: scale(1.08);
-  }
-
-  &.active {
-    border-color: $accent-color;
-  }
-}
-
-.active-indicator {
-  position: absolute;
-  left: 0;
-  z-index: -1;
-  width: 0;
-  height: 0;
-  border-radius: $radius-lg;
-  background-color: $accent-color;
+  min-height: 64px;
+  padding: var(--space-2) var(--space-1);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  text-decoration: none;
   transition:
-    top 0.3s ease,
-    width 0.3s ease,
-    height 0.3s ease;
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+
+  &:hover {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  &[aria-current='page'] {
+    background-color: var(--color-accent-soft);
+    color: var(--color-text);
+
+    .app-nav__icon {
+      color: var(--color-accent-strong);
+    }
+
+    // A small sage dot marks the current game.
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 6px;
+      width: 4px;
+      height: 4px;
+      margin-top: -2px;
+      border-radius: 50%;
+      background-color: var(--color-accent);
+    }
+  }
+}
+
+.app-nav__icon {
+  width: 20px;
+  height: 20px;
+}
+
+.app-nav__label {
+  font-size: 0.6875rem;
+  font-weight: var(--weight-medium);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+
+.app-nav__link--profile {
+  margin-top: auto;
+}
+
+.app-nav__avatar {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  object-fit: cover;
+
+  .app-nav__link--profile[aria-current='page'] & {
+    border-color: var(--color-accent-strong);
+    box-shadow: 0 0 0 2px var(--color-accent-soft);
+  }
+}
+
+// Small screens: a bar at the bottom; the tile shrinks to sit behind the icon and label.
+@include bp.below(bp.$small) {
+  .app-nav {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    flex-direction: row;
+    gap: 0;
+    height: auto;
+    padding: 0 var(--space-1) env(safe-area-inset-bottom);
+    border-top: 1px solid var(--color-border);
+    border-right: 0;
+  }
+
+  .app-nav__mark {
+    display: none;
+  }
+
+  .app-nav__list {
+    flex: 3;
+    flex-direction: row;
+    gap: 0;
+  }
+
+  .app-nav__item {
+    display: flex;
+    flex: 1;
+  }
+
+  .app-nav__link {
+    z-index: 0;
+    flex: 1;
+    gap: 4px;
+    min-height: var(--app-nav-height);
+    padding: 0 var(--space-1);
+    border-radius: 0;
+
+    &:hover,
+    &[aria-current='page'] {
+      background-color: transparent;
+    }
+
+    // In the bar the dot becomes a small tile behind the icon and label.
+    &[aria-current='page']::before {
+      inset: 6px 12%;
+      z-index: -1;
+      width: auto;
+      height: auto;
+      margin: 0;
+      border-radius: var(--radius-md);
+      background-color: var(--color-accent-soft);
+    }
+  }
+
+  .app-nav__link--profile {
+    margin-top: 0;
+  }
+
+  .app-nav__avatar {
+    width: 22px;
+    height: 22px;
+  }
 }

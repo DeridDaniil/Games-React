@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import GameEnds from './GameEnds';
 import ChessContext from '../../../model/Context';
 import { initChessGame } from '../../../model/constant';
-import { Status } from '../../../model/types';
+import { ActionTypes, Status } from '../../../model/types';
 import { ProfileProvider } from '../../../../../profile/model/ProfileContext';
 import { loadSession, register } from '../../../../../profile/lib/profileStorage';
 
@@ -18,15 +18,16 @@ afterEach(() => {
   localStorage.clear();
 });
 
-const renderWithStatus = (status, { strict = false } = {}) => {
+const renderWithStatus = (status, { strict = false, state = {} } = {}) => {
+  const dispatch = vi.fn();
   const tree = (
     <ProfileProvider>
-      <ChessContext.Provider value={{ chessState: { ...initChessGame, status }, dispatch: vi.fn() }}>
+      <ChessContext.Provider value={{ chessState: { ...initChessGame, ...state, status }, dispatch }}>
         <GameEnds />
       </ChessContext.Provider>
     </ProfileProvider>
   );
-  return render(strict ? <StrictMode>{tree}</StrictMode> : tree);
+  return { ...render(strict ? <StrictMode>{tree}</StrictMode> : tree), dispatch };
 };
 
 const chessStats = () => loadSession().stats.chess;
@@ -59,6 +60,20 @@ describe('Chess GameEnds', () => {
   it('records the result only once under StrictMode', () => {
     renderWithStatus(Status.black, { strict: true });
     expect(chessStats()).toEqual({ ...noGames, losses: 1 });
+  });
+
+  it('marks the game as recorded, so the same game is never recorded twice', () => {
+    const { dispatch } = renderWithStatus(Status.white);
+
+    expect(dispatch).toHaveBeenCalledWith({ type: ActionTypes.RESULT_RECORDED });
+  });
+
+  // A game resumed by Take Back after it ended keeps the result recorded when it first ended.
+  it('records nothing for a game whose result is already recorded', () => {
+    renderWithStatus(Status.white, { state: { resultRecorded: true } });
+
+    expect(screen.getByRole('heading', { name: Status.white })).toBeTruthy();
+    expect(chessStats()).toEqual(noGames);
   });
 
   it.each([Status.ongoing, Status.promoting])('renders nothing and records nothing while "%s"', (status) => {

@@ -6,84 +6,100 @@ function TicTacToeSettings() {
 
   return (
     <div className="ttt-settings">
-      <div className="ttt-settings__section">
-        <label className="ttt-settings__label">Game Mode</label>
-        <div className="ttt-settings__btn-group">
+      <fieldset className="ttt-settings__group">
+        <legend className="ttt-settings__label">Game Mode</legend>
+        <div className="ttt-settings__options">
           <button
-            className={`ttt-settings__btn ${settings.mode === 'friend' ? 'active' : ''}`}
+            type="button"
+            className="ttt-settings__option"
+            aria-pressed={settings.mode === 'friend'}
             onClick={() => updateSettings({ mode: 'friend' })}
           >
             vs Friend
           </button>
           <button
-            className={`ttt-settings__btn ${settings.mode === 'computer' ? 'active' : ''}`}
+            type="button"
+            className="ttt-settings__option"
+            aria-pressed={settings.mode === 'computer'}
             onClick={() => updateSettings({ mode: 'computer' })}
           >
             vs Computer
           </button>
         </div>
-      </div>
+      </fieldset>
 
       {settings.mode === 'computer' && (
-        <div className="ttt-settings__section">
-          <label className="ttt-settings__label">Difficulty</label>
-          <div className="ttt-settings__btn-group">
+        <fieldset className="ttt-settings__group">
+          <legend className="ttt-settings__label">Difficulty</legend>
+          <div className="ttt-settings__options">
             <button
-              className={`ttt-settings__btn ${settings.difficulty === 'easy' ? 'active' : ''}`}
+              type="button"
+              className="ttt-settings__option"
+              aria-pressed={settings.difficulty === 'easy'}
               onClick={() => updateSettings({ difficulty: 'easy' })}
             >
               Easy
             </button>
             <button
-              className={`ttt-settings__btn ${settings.difficulty === 'medium' ? 'active' : ''}`}
+              type="button"
+              className="ttt-settings__option"
+              aria-pressed={settings.difficulty === 'medium'}
               onClick={() => updateSettings({ difficulty: 'medium' })}
             >
               Medium
             </button>
             <button
-              className={`ttt-settings__btn ${settings.difficulty === 'unbeatable' ? 'active' : ''}`}
+              type="button"
+              className="ttt-settings__option"
+              aria-pressed={settings.difficulty === 'unbeatable'}
               onClick={() => updateSettings({ difficulty: 'unbeatable' })}
             >
               Unbeatable
             </button>
           </div>
-        </div>
+        </fieldset>
       )}
 
-      <div className="ttt-settings__section">
-        <label className="ttt-settings__label">Board Size</label>
-        <div className="ttt-settings__btn-group">
+      <fieldset className="ttt-settings__group">
+        <legend className="ttt-settings__label">Board Size</legend>
+        <div className="ttt-settings__options">
           {[3, 5, 7].map(size => (
             <button
               key={size}
-              className={`ttt-settings__btn ${settings.boardSize === size ? 'active' : ''}`}
+              type="button"
+              className="ttt-settings__option"
+              aria-pressed={settings.boardSize === size}
               onClick={() => updateSettings({ boardSize: size })}
             >
               {size}x{size}
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
-      <div className="ttt-settings__section">
-        <label className="ttt-settings__label">Your Side</label>
-        <div className="ttt-settings__btn-group">
+      <fieldset className="ttt-settings__group">
+        <legend className="ttt-settings__label">Your Side</legend>
+        <div className="ttt-settings__options">
           <button
-            className={`ttt-settings__btn ${settings.playerSide === 'X' ? 'active' : ''}`}
+            type="button"
+            className="ttt-settings__option"
+            aria-pressed={settings.playerSide === 'X'}
             onClick={() => updateSettings({ playerSide: 'X' })}
           >
             X (first)
           </button>
           <button
-            className={`ttt-settings__btn ${settings.playerSide === 'O' ? 'active' : ''}`}
+            type="button"
+            className="ttt-settings__option"
+            aria-pressed={settings.playerSide === 'O'}
             onClick={() => updateSettings({ playerSide: 'O' })}
           >
             O (second)
           </button>
         </div>
-      </div>
+      </fieldset>
 
-      <p className="ttt-settings__hint">Changes apply on next game restart.</p>
+      <p className="ttt-settings__hint">Choosing a different option starts a new game.</p>
     </div>
   );
 }

@@ -1,12 +1,18 @@
 // @vitest-environment jsdom
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import App from './App';
 import { ProfileProvider } from '../features/profile/model/ProfileContext';
 import { TicTacToeSettingsProvider } from '../features/games/tic-tac-toe/model/TicTacToeSettingsContext';
-import { register } from '../features/profile/lib/profileStorage';
+import { loadSession, register } from '../features/profile/lib/profileStorage';
+
+// Shows where the router is, so a test can tell a redirect from a page that merely looks right.
+function LocationProbe() {
+  const { pathname } = useLocation();
+  return <output aria-label="Current route">{pathname}</output>;
+}
 
 // Same tree as main.jsx (StrictMode + providers), with an in-memory router to pick the starting route.
 const renderAt = (route) => render(
@@ -15,11 +21,23 @@ const renderAt = (route) => render(
       <ProfileProvider>
         <TicTacToeSettingsProvider>
           <App />
+          <LocationProbe />
         </TicTacToeSettingsProvider>
       </ProfileProvider>
     </MemoryRouter>
   </StrictMode>
 );
+
+const currentRoute = () => screen.getByRole('status', { name: 'Current route' }).textContent;
+
+const fill = (label, value) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
+
+const submit = (name) => fireEvent.click(screen.getByRole('button', { name }));
+
+const expectTicTacToe = async () => {
+  expect(await screen.findByRole('heading', { level: 1, name: 'Tic Tac Toe' })).toBeTruthy();
+  expect(currentRoute()).toBe('/tictactoe');
+};
 
 beforeEach(() => {
   localStorage.clear();
@@ -30,9 +48,12 @@ afterEach(() => {
 });
 
 describe('App routing (smoke)', () => {
-  it('sends a visitor without a profile to the login page', () => {
+  it('sends a visitor without a profile to the sign-in page', () => {
     renderAt('/chess');
-    expect(screen.getByRole('heading', { name: 'Login' })).toBeTruthy();
+
+    expect(currentRoute()).toBe('/profile/create');
+    expect(screen.getByRole('tab', { name: 'Sign in', selected: true })).toBeTruthy();
+    expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
   });
 
   describe('with a signed-in profile', () => {
@@ -62,13 +83,70 @@ describe('App routing (smoke)', () => {
     it('opens the profile page', () => {
       renderAt('/profile');
 
-      expect(screen.getByRole('heading', { name: 'Tester' })).toBeTruthy();
-      expect(screen.getByRole('heading', { name: 'Statistics' })).toBeTruthy();
+      expect(screen.getByRole('heading', { level: 1, name: 'Tester' })).toBeTruthy();
+      expect(screen.getByRole('heading', { level: 2, name: 'Games' })).toBeTruthy();
     });
 
     it('redirects unknown routes to Tic-Tac-Toe', () => {
       renderAt('/does-not-exist');
       expect(screen.getByRole('heading', { level: 1, name: 'Tic Tac Toe' })).toBeTruthy();
+    });
+
+    it('sends a signed-in visitor of the sign-in page to Tic-Tac-Toe', async () => {
+      renderAt('/profile/create');
+      await expectTicTacToe();
+    });
+
+    it('logs out to the sign-in page and keeps the profile on this device', async () => {
+      renderAt('/profile');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Log out' }));
+
+      expect(await screen.findByRole('tab', { name: 'Sign in', selected: true })).toBeTruthy();
+      expect(currentRoute()).toBe('/profile/create');
+      expect(loadSession()).toBeNull();
+      expect(Object.keys(JSON.parse(localStorage.getItem('games-react-users')))).toEqual(['tester']);
+    });
+  });
+
+  // Regression: the gate used to send a freshly signed-in user from /profile/create to /profile
+  // before the form's own navigation to /tictactoe was applied.
+  describe('after signing in or registering', () => {
+    it('lands on Tic-Tac-Toe after signing in', async () => {
+      register('tester', 'Tester', 'secret');
+      localStorage.removeItem('games-react-session');
+      renderAt('/profile/create');
+
+      fill('Login', 'tester');
+      fill('Password', 'secret');
+      submit('Sign in');
+
+      await expectTicTacToe();
+    });
+
+    it('lands on Tic-Tac-Toe after registering', async () => {
+      renderAt('/profile/create');
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Register' }));
+      fill('Login', 'newcomer');
+      fill('Display name', 'Newcomer');
+      fill('Password', 'secret');
+      submit('Create profile');
+
+      await expectTicTacToe();
+      expect(loadSession()).toMatchObject({ login: 'newcomer', name: 'Newcomer' });
+    });
+
+    it('lands on Tic-Tac-Toe when the sign-in page was opened from a game link', async () => {
+      register('tester', 'Tester', 'secret');
+      localStorage.removeItem('games-react-session');
+      renderAt('/chess');
+
+      fill('Login', 'tester');
+      fill('Password', 'secret');
+      submit('Sign in');
+
+      await expectTicTacToe();
     });
   });
 });

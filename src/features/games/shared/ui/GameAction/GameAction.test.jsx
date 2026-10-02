@@ -3,20 +3,20 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import GameAction from './GameAction';
 
-const tile = (label) => screen.getByText(label).closest('.game-action');
-
 describe('GameAction', () => {
-  it('shows its label and reports every click', () => {
+  it('is a real button that reports every click', () => {
     const onClick = vi.fn();
     render(<GameAction onClick={onClick}>Take Back</GameAction>);
 
-    fireEvent.click(screen.getByText('Take Back'));
-    fireEvent.click(tile('Take Back'));
+    const button = screen.getByRole('button', { name: 'Take Back' });
+    fireEvent.click(button);
+    fireEvent.click(button);
 
+    expect(button.getAttribute('type')).toBe('button');
     expect(onClick).toHaveBeenCalledTimes(2);
   });
 
-  it('uses the plain look by default and the danger look on request', () => {
+  it('looks quiet by default and dangerous for actions that end the game', () => {
     render(
       <>
         <GameAction onClick={() => {}}>Take Back</GameAction>
@@ -24,7 +24,14 @@ describe('GameAction', () => {
       </>
     );
 
-    expect(tile('Take Back').className).toBe('game-action');
-    expect(tile('Surrender').className).toBe('game-action game-action--danger');
+    expect(screen.getByRole('button', { name: 'Take Back' }).classList.contains('button--secondary')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Surrender' }).classList.contains('button--danger')).toBe(true);
+  });
+
+  it('keeps its icon out of the accessible name', () => {
+    render(<GameAction icon={<svg data-testid="icon" />} onClick={() => {}}>Surrender</GameAction>);
+
+    expect(screen.getByRole('button', { name: 'Surrender' })).toBeTruthy();
+    expect(screen.getByTestId('icon').parentElement.getAttribute('aria-hidden')).toBe('true');
   });
 });

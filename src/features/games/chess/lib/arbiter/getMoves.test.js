@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   getBishopMoves,
-  getCastleDirection,
   getCastlingMoves,
   getFigures,
   getKingMoves,
@@ -10,7 +9,8 @@ import {
   getPawnCaptures,
   getPawnMoves,
   getQueenMoves,
-  getRookMoves
+  getRookMoves,
+  keepCastlingRights
 } from './getMoves';
 import { createPosition } from '../helper';
 import { at, boardWith, sq, toSquares } from '../../../shared/test/boardTestUtils';
@@ -277,34 +277,36 @@ describe('getCastlingMoves', () => {
   });
 });
 
-describe('getCastleDirection', () => {
-  const rookMove = (figure, square, current) =>
-    getCastleDirection({ castleDirection: current, figure, ...at(square) });
+describe('keepCastlingRights', () => {
+  const homeRank = (colour, rank) => ({ [`e${rank}`]: `${colour}-king`, [`a${rank}`]: `${colour}-rook`, [`h${rank}`]: `${colour}-rook` });
 
-  it('removes all castling rights when the king moves', () => {
-    expect(rookMove('white-king', 'e1', { white: 'both', black: 'both' })).toBe('none');
+  it('keeps both sides while the king and both rooks stand on their starting squares', () => {
+    expect(keepCastlingRights('both', createPosition(), 'white')).toBe('both');
+    expect(keepCastlingRights('both', createPosition(), 'black')).toBe('both');
   });
 
-  it('keeps the opposite side when a corner rook moves first', () => {
-    expect(rookMove('white-rook', 'a1', { white: 'both', black: 'both' })).toBe('right');
-    expect(rookMove('white-rook', 'h1', { white: 'both', black: 'both' })).toBe('left');
-    expect(rookMove('black-rook', 'a8', { white: 'both', black: 'both' })).toBe('right');
-    expect(rookMove('black-rook', 'h8', { white: 'both', black: 'both' })).toBe('left');
+  it('loses both sides once the king has left its square', () => {
+    const position = boardWith({ e2: 'white-king', a1: 'white-rook', h1: 'white-rook', e8: 'black-king' });
+    expect(keepCastlingRights('both', position, 'white')).toBe('none');
   });
 
-  it('removes the last remaining side', () => {
-    expect(rookMove('white-rook', 'a1', { white: 'left', black: 'both' })).toBe('none');
-    expect(rookMove('white-rook', 'h1', { white: 'right', black: 'both' })).toBe('none');
+  it('loses the side whose rook has left its corner', () => {
+    expect(keepCastlingRights('both', boardWith({ ...homeRank('white', 1), a1: '', a2: 'white-rook' }), 'white')).toBe('right');
+    expect(keepCastlingRights('both', boardWith({ ...homeRank('white', 1), h1: '', h3: 'white-rook' }), 'white')).toBe('left');
+    expect(keepCastlingRights('both', boardWith({ ...homeRank('black', 8), h8: '', g8: 'black-rook' }), 'black')).toBe('left');
+    expect(keepCastlingRights('both', boardWith({ ...homeRank('black', 8), a8: '', d8: 'black-rook' }), 'black')).toBe('right');
   });
 
-  it('accepts string coordinates coming from drag-and-drop data', () => {
-    expect(getCastleDirection({ castleDirection: { white: 'both' }, figure: 'white-rook', axisY: '0', axisX: '0' })).toBe('right');
+  it('loses the side whose rook was captured on its corner', () => {
+    expect(keepCastlingRights('both', boardWith({ ...homeRank('white', 1), h1: 'black-bishop' }), 'white')).toBe('left');
+    expect(keepCastlingRights('both', boardWith({ ...homeRank('black', 8), a8: 'white-queen' }), 'black')).toBe('right');
   });
 
-  it('returns undefined when castling rights do not change', () => {
-    expect(rookMove('white-knight', 'g1', { white: 'both', black: 'both' })).toBeUndefined();
-    expect(rookMove('white-rook', 'd4', { white: 'both', black: 'both' })).toBeUndefined();
-    expect(rookMove('white-rook', 'a1', { white: 'right', black: 'both' })).toBeUndefined();
+  it('never gives back a side that was already lost, even with a rook back in the corner', () => {
+    const home = boardWith(homeRank('white', 1));
+    expect(keepCastlingRights('left', home, 'white')).toBe('left');
+    expect(keepCastlingRights('right', home, 'white')).toBe('right');
+    expect(keepCastlingRights('none', home, 'white')).toBe('none');
   });
 });
 

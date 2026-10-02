@@ -1,146 +1,46 @@
-import { useRef, useEffect, useState } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'motion/react';
-import { Info, Settings } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { CircleDot, Crown, Grid3x3 } from 'lucide-react';
 import { useProfile } from '../../../features/profile/model/ProfileContext';
-import Modal from '../../../shared/ui/Modal/Modal';
-import TicTacToeInfo from '../../../features/games/tic-tac-toe/ui/Info/TicTacToeInfo';
-import TicTacToeSettings from '../../../features/games/tic-tac-toe/ui/Settings/TicTacToeSettings';
-import ChessInfo from '../../../features/games/chess/ui/Info/ChessInfo';
-import ChessSettings from '../../../features/games/chess/ui/Settings/ChessSettings';
-import CheckersInfo from '../../../features/games/checkers/ui/Info/CheckersInfo';
-import CheckersSettings from '../../../features/games/checkers/ui/Settings/CheckersSettings';
 import './Navigation.scss';
 
-const tabs = ['tictactoe', 'chess', 'checkers'];
+const GAMES = [
+  { path: '/tictactoe', label: 'Tic Tac Toe', Icon: Grid3x3 },
+  { path: '/chess', label: 'Chess', Icon: Crown },
+  { path: '/checkers', label: 'Checkers', Icon: CircleDot }
+];
 
-const gameConfig = {
-  tictactoe: {
-    label: 'Tic Tac Toe',
-    info: <TicTacToeInfo />,
-    settings: <TicTacToeSettings />,
-  },
-  chess: {
-    label: 'Chess',
-    info: <ChessInfo />,
-    settings: <ChessSettings />,
-  },
-  checkers: {
-    label: 'Checkers',
-    info: <CheckersInfo />,
-    settings: <CheckersSettings />,
-  },
-};
-
+// The app's only navigation: a rail on the left, a bar at the bottom on small screens.
+// Game info and settings live in each game's header, not here.
 function Navigation() {
-  const tabsRef = useRef([]);
-  const location = useLocation();
-  const navigate = useNavigate();
   const { profile } = useProfile();
-  const activeTab = tabs.find(tab => location.pathname === `/${tab}`);
-  const activeIndex = tabs.indexOf(activeTab);
-
-  const [modal, setModal] = useState({ type: null, game: null });
-  const [activeTabTop, setActiveTabTop] = useState(null);
-
-  const openModal = (type, game) => setModal({ type, game });
-  const closeModal = () => setModal({ type: null, game: null });
-
-  useEffect(() => {
-    const indicator = document.querySelector('.active-indicator');
-    if (indicator && activeIndex >= 0 && tabsRef.current[activeIndex]) {
-      const activeTabEl = tabsRef.current[activeIndex];
-      indicator.style.top = `${activeTabEl.offsetTop}px`;
-      indicator.style.width = `${activeTabEl.offsetWidth}px`;
-      indicator.style.height = `${activeTabEl.offsetHeight}px`;
-      indicator.style.opacity = '1';
-      setActiveTabTop(activeTabEl.offsetTop);
-    } else if (indicator) {
-      indicator.style.opacity = '0';
-      setActiveTabTop(null);
-    }
-  }, [activeIndex]);
-
-  const config = activeTab ? gameConfig[activeTab] : null;
 
   return (
-    <>
-      <div className="nav-wrapper">
-        <div className="tabs-container">
-          <div className="tabs">
-            {tabs.map((tab, i) => (
-              <NavLink
-                key={i}
-                to={`/${tab}`}
-                ref={(el) => (tabsRef.current[i] = el)}
-                className={({ isActive }) => `tab ${isActive ? 'active' : ''} ${tab}-logo`}
-              />
-            ))}
-            <div className="active-indicator"></div>
-          </div>
-        </div>
+    <nav className="app-nav" aria-label="Main">
+      <span className="app-nav__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="24" height="24" focusable="false">
+          <rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor" />
+          <rect x="13.75" y="3.75" width="6.5" height="6.5" rx="1" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <rect x="3.75" y="13.75" width="6.5" height="6.5" rx="1" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <rect className="app-nav__mark-warm" x="13" y="13" width="8" height="8" rx="1.5" />
+        </svg>
+      </span>
 
-        <AnimatePresence mode="wait">
-          {activeTab && activeTabTop !== null && (
-            <motion.div
-              key={activeTab}
-              className="tab-actions"
-              style={{ top: activeTabTop }}
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -20, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            >
-              <motion.button
-                className="tab-action-btn"
-                title="Info"
-                onClick={() => openModal('info', activeTab)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Info size={16} />
-              </motion.button>
-              <motion.button
-                className="tab-action-btn"
-                title="Settings"
-                onClick={() => openModal('settings', activeTab)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Settings size={16} />
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <ul className="app-nav__list">
+        {GAMES.map(({ path, label, Icon }) => (
+          <li key={path} className="app-nav__item">
+            <NavLink to={path} className="app-nav__link">
+              <Icon className="app-nav__icon" strokeWidth={1.75} aria-hidden="true" />
+              <span className="app-nav__label">{label}</span>
+            </NavLink>
+          </li>
+        ))}
+      </ul>
 
-      <button
-        className={`profile-avatar-btn ${location.pathname === '/profile' ? 'active' : ''}`}
-        onClick={() => navigate('/profile')}
-        title={profile?.name || 'Profile'}
-      >
-        <img src={profile?.avatar} alt="avatar" />
-      </button>
-
-      {config && (
-        <>
-          <Modal
-            isOpen={modal.type === 'info' && modal.game === activeTab}
-            onClose={closeModal}
-            title={`${config.label} — Info`}
-          >
-            {config.info}
-          </Modal>
-          <Modal
-            isOpen={modal.type === 'settings' && modal.game === activeTab}
-            onClose={closeModal}
-            title={`${config.label} — Settings`}
-          >
-            {config.settings}
-          </Modal>
-        </>
-      )}
-    </>
+      <NavLink to="/profile" className="app-nav__link app-nav__link--profile" title={profile?.name}>
+        <img className="app-nav__avatar" src={profile?.avatar} alt="" />
+        <span className="app-nav__label">Profile</span>
+      </NavLink>
+    </nav>
   );
 }
 

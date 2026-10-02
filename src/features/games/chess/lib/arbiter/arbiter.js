@@ -64,7 +64,8 @@ const arbiter = {
     if (enemyMoves.some(([y, x]) => kingPosition[0] === y && kingPosition[1] === x)) return true;
     return false;
   },
-  isStalemate: function (position, player, castleDirection) {
+  // `prevPosition` is the position before the last move; without it en passant replies are not seen.
+  isStalemate: function (position, player, castleDirection, prevPosition) {
     const isInCheck = this.isPlayerInCheck({ positionAfterMove: position, player });
     if (isInCheck) return false;
 
@@ -73,6 +74,7 @@ const arbiter = {
       ...acc,
       ...(this.getValidMoves({
         position,
+        prevPosition,
         castleDirection,
         ...f
       }))
@@ -99,13 +101,14 @@ const arbiter = {
 
     return false;
   },
-  isCheckmate: function (position, player, castleDirection) {
+  isCheckmate: function (position, player, castleDirection, prevPosition) {
     const isInCheck = this.isPlayerInCheck({ positionAfterMove: position, player });
     const figures = getFigures(position, player);
     const moves = figures.reduce((acc, f) => acc = [
       ...acc,
       ...(this.getValidMoves({
         position,
+        prevPosition,
         castleDirection,
         ...f
       }))

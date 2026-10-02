@@ -1,22 +1,24 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import SurrenderControl from './SurrenderControl';
-import SurrenderDialog from './SurrenderDialog';
+import { SURRENDER_DELAY_MS } from './SurrenderDialog';
+import { MODAL_EXIT_MS } from '../../../../../shared/ui/Modal/Modal';
 
 const MESSAGE = 'This will end the current game.';
 
 const renderControl = () => {
   const onConfirm = vi.fn();
-  const { container } = render(<SurrenderControl message={MESSAGE} onConfirm={onConfirm} />);
-  return { onConfirm, container };
+  const { unmount } = render(<SurrenderControl message={MESSAGE} onConfirm={onConfirm} />);
+  return { onConfirm, unmount };
 };
 
-// While the dialog is open "Surrender" is also the label of its confirm button.
-const tile = () => screen.getByText('Surrender', { selector: '.game-action span' });
-const dialogTitle = () => screen.queryByRole('heading', { name: 'Confirm Surrender' });
-const confirmButton = () => screen.getByRole('button', { name: 'Surrender' });
+// While the dialog is open its confirm button is called "Surrender" too.
+const surrenderAction = () => screen.getAllByRole('button', { name: 'Surrender' }).find(button => !button.closest('[role="dialog"]'));
+const dialog = () => screen.queryByRole('dialog', { name: 'Confirm Surrender' });
+const inDialog = (name) => within(screen.getByRole('dialog')).getByRole('button', { name });
 const advance = (ms) => act(() => { vi.advanceTimersByTime(ms); });
+const openDialog = () => fireEvent.click(surrenderAction());
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -27,105 +29,144 @@ afterEach(() => {
 });
 
 describe('SurrenderControl', () => {
-  it('starts with only the danger Surrender tile and no dialog', () => {
+  it('starts with the danger Surrender action and no dialog', () => {
     renderControl();
 
-    expect(tile().parentElement.classList.contains('game-action--danger')).toBe(true);
-    expect(dialogTitle()).toBeNull();
+    expect(surrenderAction().classList.contains('button--danger')).toBe(true);
+    expect(dialog()).toBeNull();
   });
 
-  it('opens the dialog with the game message when the tile is clicked', () => {
+  it('opens a labelled modal dialog with the game message', () => {
     renderControl();
 
-    fireEvent.click(tile());
+    openDialog();
 
-    expect(dialogTitle()).not.toBeNull();
-    expect(screen.getByText(`Are you sure you want to surrender? ${MESSAGE}`)).toBeTruthy();
-    // Rendered in place, right after the tile, not in a portal (its CSS relies on that).
-    expect(tile().parentElement.nextElementSibling.classList.contains('game-surrender-dialog')).toBe(true);
+    expect(dialog().getAttribute('aria-modal')).toBe('true');
+    expect(screen.getByRole('dialog', { description: `Are you sure you want to surrender? ${MESSAGE}` })).toBe(dialog());
   });
 
   it('keeps Confirm disabled for the first two seconds', () => {
     const { onConfirm } = renderControl();
-    fireEvent.click(tile());
+    openDialog();
 
-    advance(1_999);
-    expect(confirmButton().disabled).toBe(true);
-    fireEvent.click(confirmButton());
-    advance(1_000);
+    advance(SURRENDER_DELAY_MS - 1);
+    expect(inDialog('Surrender').disabled).toBe(true);
+    fireEvent.click(inDialog('Surrender'));
+    advance(MODAL_EXIT_MS);
 
     expect(onConfirm).not.toHaveBeenCalled();
-    expect(dialogTitle()).not.toBeNull();
+    expect(dialog()).not.toBeNull();
   });
 
-  it('enables Confirm after two seconds', () => {
-    renderControl();
-    fireEvent.click(tile());
-
-    advance(2_000);
-
-    expect(confirmButton().disabled).toBe(false);
-    expect(confirmButton().classList.contains('game-surrender-dialog__button--active')).toBe(true);
-  });
-
-  it('reports the confirmation exactly once, after the close animation, and closes', () => {
+  it('reports the confirmation exactly once, after the dialog has closed', () => {
     const { onConfirm } = renderControl();
-    fireEvent.click(tile());
-    advance(2_000);
+    openDialog();
+    advance(SURRENDER_DELAY_MS);
 
-    fireEvent.click(confirmButton());
+    fireEvent.click(inDialog('Surrender'));
     expect(onConfirm).not.toHaveBeenCalled();
-    advance(250);
+    advance(MODAL_EXIT_MS);
 
     expect(onConfirm).toHaveBeenCalledTimes(1);
-    expect(dialogTitle()).toBeNull();
+    expect(dialog()).toBeNull();
   });
 
-  it('closes on Cancel once the close animation has played, without confirming', () => {
-    const { onConfirm, container } = renderControl();
-    fireEvent.click(tile());
+  it('ignores a second Confirm while the dialog is closing', () => {
+    const { onConfirm } = renderControl();
+    openDialog();
+    advance(SURRENDER_DELAY_MS);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(container.querySelector('.game-surrender-dialog--closing')).not.toBeNull();
-    advance(249);
-    expect(dialogTitle()).not.toBeNull();
-    advance(1);
+    const confirm = inDialog('Surrender');
+    fireEvent.click(confirm);
+    expect(confirm.disabled).toBe(true);
+    fireEvent.click(confirm);
+    advance(MODAL_EXIT_MS * 2);
 
-    expect(dialogTitle()).toBeNull();
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes on Cancel once, without confirming, even when Cancel is pressed twice', () => {
+    const { onConfirm } = renderControl();
+    openDialog();
+    advance(SURRENDER_DELAY_MS);
+
+    const cancel = inDialog('Cancel');
+    fireEvent.click(cancel);
+    expect(cancel.disabled).toBe(true);
+    fireEvent.click(cancel);
+    fireEvent.click(inDialog('Surrender'));
+    advance(MODAL_EXIT_MS);
+
+    expect(dialog()).toBeNull();
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
-  it('cancels when the backdrop is clicked', () => {
-    const { onConfirm, container } = renderControl();
-    fireEvent.click(tile());
+  it('treats Escape and the backdrop as Cancel', () => {
+    const { onConfirm } = renderControl();
 
-    fireEvent.click(container.querySelector('.game-surrender-dialog__backdrop'));
-    advance(250);
+    openDialog();
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    advance(MODAL_EXIT_MS);
+    expect(dialog()).toBeNull();
 
-    expect(dialogTitle()).toBeNull();
+    openDialog();
+    fireEvent.click(document.querySelector('.modal__backdrop'));
+    advance(MODAL_EXIT_MS);
+    expect(dialog()).toBeNull();
+
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
   it('starts the confirmation delay again when reopened', () => {
     renderControl();
-    fireEvent.click(tile());
-    advance(2_000);
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    advance(250);
+    openDialog();
+    advance(SURRENDER_DELAY_MS);
+    fireEvent.click(inDialog('Cancel'));
+    advance(MODAL_EXIT_MS);
 
-    fireEvent.click(tile());
+    openDialog();
 
-    expect(confirmButton().disabled).toBe(true);
+    expect(inDialog('Surrender').disabled).toBe(true);
   });
-});
 
-describe('SurrenderDialog', () => {
-  it('clears its confirmation timer when unmounted', () => {
-    const { unmount } = render(<SurrenderDialog message={MESSAGE} onCancel={vi.fn()} onConfirm={vi.fn()} />);
-    expect(vi.getTimerCount()).toBeGreaterThan(0);
+  it('moves focus into the dialog and back to the Surrender action', () => {
+    renderControl();
+    const action = surrenderAction();
+    action.focus();
+
+    fireEvent.click(action);
+    expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(true);
+
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    expect(document.activeElement).toBe(action);
+  });
+
+  // The backdrop is never disabled, so only the closing guard stops it from starting a second close
+  // whose timer would replace the pending confirmation and outlive an unmount.
+  it('ignores the backdrop after Confirm, so unmounting while closing still confirms nothing', () => {
+    const { onConfirm, unmount } = renderControl();
+    openDialog();
+    advance(SURRENDER_DELAY_MS);
+
+    fireEvent.click(inDialog('Surrender'));
+    fireEvent.click(document.querySelector('.modal__backdrop'));
+    unmount();
+    advance(MODAL_EXIT_MS * 2);
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('confirms nothing and leaves no timers behind when unmounted while closing', () => {
+    const { onConfirm, unmount } = renderControl();
+    openDialog();
+    advance(SURRENDER_DELAY_MS);
+    fireEvent.click(inDialog('Surrender'));
 
     unmount();
+    advance(MODAL_EXIT_MS * 2);
 
+    expect(onConfirm).not.toHaveBeenCalled();
     expect(vi.getTimerCount()).toBe(0);
   });
 });

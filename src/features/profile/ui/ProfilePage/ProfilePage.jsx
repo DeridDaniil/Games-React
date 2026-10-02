@@ -1,184 +1,108 @@
-import { useState, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { HardDrive, LogOut, Pencil } from 'lucide-react';
 import { useProfile } from '../../model/ProfileContext';
-import { defaultAvatar, resizeImage } from '../../lib/constants';
+import { countOf, summarizeAll } from '../../lib/stats';
+import Button from '../../../../shared/ui/Button/Button';
+import ProfileEditForm from '../ProfileEditForm/ProfileEditForm';
+import GameStats from '../GameStats/GameStats';
 import './ProfilePage.scss';
 
-const gameLabels = {
-  tictactoe: 'Tic Tac Toe',
-  chess: 'Chess',
-  checkers: 'Checkers',
-};
+const OVERVIEW = [
+  { key: 'played', label: 'Games' },
+  { key: 'wins', label: 'Wins' },
+  { key: 'losses', label: 'Losses' },
+  { key: 'draws', label: 'Draws' },
+];
 
+// The signed-in player's page: who they are, how their games went, and the account itself.
 function ProfilePage() {
   const { profile, updateProfile, resetStats, logout } = useProfile();
   const navigate = useNavigate();
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(profile.name);
-  const [avatar, setAvatar] = useState(profile.avatar);
-  const [confirmReset, setConfirmReset] = useState(null);
-  const fileInputRef = useRef(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const editButtonId = useId();
+  const wasEditingRef = useRef(false);
 
-  const handleSave = () => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    updateProfile({ name: trimmed, avatar });
-    setEditing(false);
-  };
+  // Leaving edit mode puts focus back on the button that opened it.
+  useEffect(() => {
+    if (wasEditingRef.current && !isEditing) document.getElementById(editButtonId)?.focus();
+    wasEditingRef.current = isEditing;
+  }, [isEditing, editButtonId]);
 
-  const handleCancel = () => {
-    setName(profile.name);
-    setAvatar(profile.avatar);
-    setEditing(false);
-  };
+  if (!profile) return null;
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) return;
-    try {
-      const resized = await resizeImage(file);
-      setAvatar(resized);
-    } catch {
-      // ignore invalid images
-    }
-    e.target.value = '';
-  };
+  const totals = summarizeAll(profile.stats);
 
-  const handleRemoveAvatar = () => {
-    setAvatar(defaultAvatar);
-  };
-
-  const handleResetStats = (game) => {
-    resetStats(game);
-    setConfirmReset(null);
+  const handleSave = (changes) => {
+    updateProfile(changes);
+    setIsEditing(false);
   };
 
   const handleLogout = () => {
     logout();
-    navigate('/profile/create');
+    navigate('/profile/create', { replace: true });
   };
-
-  const hasCustomAvatar = avatar !== defaultAvatar;
-
-  const totalStats = Object.values(profile.stats).reduce(
-    (acc, s) => ({
-      wins: acc.wins + s.wins,
-      losses: acc.losses + s.losses,
-      draws: acc.draws + s.draws,
-    }),
-    { wins: 0, losses: 0, draws: 0 }
-  );
-  totalStats.total = totalStats.wins + totalStats.losses + totalStats.draws;
 
   return (
     <div className="profile-page">
-      <div className="profile-page__card">
-        <div className="profile-page__header">
-          <div className="profile-page__avatar-wrapper">
-            <img src={editing ? avatar : profile.avatar} alt="avatar" className="profile-page__avatar" />
-            {editing && (
-              <button
-                className="profile-page__avatar-edit"
-                onClick={() => fileInputRef.current?.click()}
-                title="Upload photo"
-              >
-                +
-              </button>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={handleFileUpload}
-            />
-          </div>
-
-          <div className="profile-page__info">
-            {editing ? (
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="profile-page__name-input"
-                maxLength={20}
-                autoFocus
-              />
-            ) : (
-              <h1 className="profile-page__name">{profile.name}</h1>
-            )}
-            <p className="profile-page__login">@{profile.login}</p>
-            <p className="profile-page__total">
-              {totalStats.total} games played
+      {isEditing ? (
+        <ProfileEditForm profile={profile} onSave={handleSave} onCancel={() => setIsEditing(false)} />
+      ) : (
+        <header className="profile-identity">
+          <img className="profile-identity__avatar" src={profile.avatar} alt="" width="80" height="80" />
+          <div className="profile-identity__text">
+            <h1 className="profile-identity__name">{profile.name}</h1>
+            <p className="profile-identity__meta">
+              <span>@{profile.login}</span>
+              <span className="profile-identity__dot" aria-hidden="true">·</span>
+              <span>{`${countOf(totals.played, 'game')} played`}</span>
             </p>
           </div>
+          <Button
+            id={editButtonId}
+            className="profile-identity__edit"
+            icon={<Pencil />}
+            onClick={() => setIsEditing(true)}
+          >
+            Edit profile
+          </Button>
+        </header>
+      )}
 
-          <div className="profile-page__actions">
-            {editing ? (
-              <>
-                <button className="profile-page__btn save" onClick={handleSave} disabled={!name.trim()}>Save</button>
-                <button className="profile-page__btn cancel" onClick={handleCancel}>Cancel</button>
-              </>
-            ) : (
-              <button className="profile-page__btn edit" onClick={() => setEditing(true)}>Edit</button>
-            )}
-          </div>
+      <section className="profile-section" aria-labelledby="profile-overview-title">
+        <h2 id="profile-overview-title" className="profile-section__title">Overview</h2>
+        <dl className="profile-overview">
+          {OVERVIEW.map(({ key, label }) => (
+            <div key={key} className="profile-overview__item">
+              <dt className="profile-overview__label">{label}</dt>
+              <dd className="profile-overview__value">{totals[key]}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section className="profile-section" aria-labelledby="profile-games-title">
+        <h2 id="profile-games-title" className="profile-section__title">Games</h2>
+        <p className="profile-section__hint">
+          Against the computer the result is yours. When two people share the screen, it counts for White
+          in Chess and Checkers and for X in Tic Tac Toe.
+        </p>
+        <GameStats stats={profile.stats} onReset={resetStats} />
+      </section>
+
+      <section className="profile-section" aria-labelledby="profile-account-title">
+        <h2 id="profile-account-title" className="profile-section__title">Account</h2>
+        <div className="profile-account">
+          <p className="profile-account__note">
+            <HardDrive aria-hidden="true" />
+            <span>
+              Profiles and statistics are stored on this device. Logging out keeps them here, so you can sign
+              in again later.
+            </span>
+          </p>
+          <Button variant="danger" icon={<LogOut />} onClick={handleLogout}>Log out</Button>
         </div>
-
-        {editing && hasCustomAvatar && (
-          <button className="profile-page__remove-avatar" onClick={handleRemoveAvatar}>
-            Remove photo
-          </button>
-        )}
-
-        <div className="profile-page__stats">
-          <h2>Statistics</h2>
-          <div className="profile-page__stats-grid">
-            {Object.entries(gameLabels).map(([key, label]) => {
-              const s = profile.stats[key];
-              const total = s.wins + s.losses + s.draws;
-              const winRate = total > 0 ? Math.round((s.wins / total) * 100) : 0;
-              return (
-                <div key={key} className="profile-page__stat-card">
-                  <div className="profile-page__stat-header">
-                    <h3>{label}</h3>
-                    {confirmReset === key ? (
-                      <div className="profile-page__confirm-reset">
-                        <button onClick={() => handleResetStats(key)}>Yes</button>
-                        <button onClick={() => setConfirmReset(null)}>No</button>
-                      </div>
-                    ) : (
-                      <button
-                        className="profile-page__reset-btn"
-                        onClick={() => setConfirmReset(key)}
-                        title="Reset stats"
-                      >
-                        Reset
-                      </button>
-                    )}
-                  </div>
-                  <div className="profile-page__stat-row">
-                    <span className="win">W: {s.wins}</span>
-                    <span className="loss">L: {s.losses}</span>
-                    <span className="draw">D: {s.draws}</span>
-                  </div>
-                  <div className="profile-page__stat-bar">
-                    <div className="profile-page__stat-fill" style={{ width: `${winRate}%` }}></div>
-                  </div>
-                  <p className="profile-page__stat-rate">
-                    {total > 0 ? `${winRate}% win rate — ${total} games` : 'No games yet'}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <button className="profile-page__logout" onClick={handleLogout}>
-          Log Out
-        </button>
-      </div>
+      </section>
     </div>
   );
 }

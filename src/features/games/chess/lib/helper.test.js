@@ -90,27 +90,37 @@ describe('getNewMoveNotation', () => {
     expect(getNewMoveNotation({ position: createPosition(), figure: 'white-pawn', axisY: '1', axisX: '4', y: 3, x: 4 })).toBe('e4');
   });
 
-  // KNOWN BUG (not fixed in this stage): knights use the same letter as the king.
-  // Standard notation would be "Nf3".
-  it('writes knight moves with "K" (current behaviour, known bug)', () => {
-    expect(notation({ position: createPosition(), figure: 'white-knight', from: 'g1', to: 'f3' })).toBe('Kf3');
+  it('writes knight moves with "N", unlike the king', () => {
+    const position = boardWith({ g1: 'white-knight', c6: 'black-knight', e5: 'white-pawn' });
+
+    expect(notation({ position: createPosition(), figure: 'white-knight', from: 'g1', to: 'f3' })).toBe('Nf3');
+    expect(notation({ position: createPosition(), figure: 'black-knight', from: 'b8', to: 'c6' })).toBe('Nc6');
+    expect(notation({ position, figure: 'black-knight', from: 'c6', to: 'e5' })).toBe('Nxe5');
   });
 
-  // KNOWN BUG (not fixed in this stage): castling notation is swapped.
-  // Standard notation is "0-0" for kingside (e1-g1) and "0-0-0" for queenside (e1-c1).
-  it('writes castling with swapped symbols (current behaviour, known bug)', () => {
-    const position = boardWith({ e1: 'white-king', a1: 'white-rook', h1: 'white-rook' });
+  it('writes kingside castling as "0-0" and queenside castling as "0-0-0" for both colours', () => {
+    const position = boardWith({ e1: 'white-king', a1: 'white-rook', h1: 'white-rook', e8: 'black-king', a8: 'black-rook', h8: 'black-rook' });
 
-    expect(notation({ position, figure: 'white-king', from: 'e1', to: 'g1' })).toBe('0-0-0');
-    expect(notation({ position, figure: 'white-king', from: 'e1', to: 'c1' })).toBe('0-0');
+    expect(notation({ position, figure: 'white-king', from: 'e1', to: 'g1' })).toBe('0-0');
+    expect(notation({ position, figure: 'white-king', from: 'e1', to: 'c1' })).toBe('0-0-0');
+    expect(notation({ position, figure: 'black-king', from: 'e8', to: 'g8' })).toBe('0-0');
+    expect(notation({ position, figure: 'black-king', from: 'e8', to: 'c8' })).toBe('0-0-0');
   });
 
-  // KNOWN QUIRK (not changed in this stage): PromotionBox passes promotesTo as colour initial +
-  // piece letter(s) ('wq', 'wr', 'wb', 'wkn'), so the moves list shows "=WQ" instead of "=Q".
-  it('appends the promotion suffix exactly as PromotionBox provides it (current behaviour)', () => {
-    const position = boardWith({ e7: 'white-pawn', d8: 'black-rook' });
+  it('writes a promotion with the letter of the new piece and no colour', () => {
+    const position = boardWith({ e7: 'white-pawn', b2: 'black-pawn' });
 
-    expect(notation({ position, figure: 'white-pawn', from: 'e7', to: 'e8', promotesTo: 'wq' })).toBe('e8=WQ');
-    expect(notation({ position, figure: 'white-pawn', from: 'e7', to: 'd8', promotesTo: 'wkn' })).toBe('exd8=WKN');
+    expect(notation({ position, figure: 'white-pawn', from: 'e7', to: 'e8', promotesTo: 'queen' })).toBe('e8=Q');
+    expect(notation({ position, figure: 'white-pawn', from: 'e7', to: 'e8', promotesTo: 'rook' })).toBe('e8=R');
+    expect(notation({ position, figure: 'white-pawn', from: 'e7', to: 'e8', promotesTo: 'bishop' })).toBe('e8=B');
+    expect(notation({ position, figure: 'white-pawn', from: 'e7', to: 'e8', promotesTo: 'knight' })).toBe('e8=N');
+    expect(notation({ position, figure: 'black-pawn', from: 'b2', to: 'b1', promotesTo: 'queen' })).toBe('b1=Q');
+  });
+
+  it('writes a capturing promotion with the starting file', () => {
+    const position = boardWith({ e7: 'white-pawn', d8: 'black-rook', b2: 'black-pawn', a1: 'white-rook' });
+
+    expect(notation({ position, figure: 'white-pawn', from: 'e7', to: 'd8', promotesTo: 'queen' })).toBe('exd8=Q');
+    expect(notation({ position, figure: 'black-pawn', from: 'b2', to: 'a1', promotesTo: 'knight' })).toBe('bxa1=N');
   });
 });

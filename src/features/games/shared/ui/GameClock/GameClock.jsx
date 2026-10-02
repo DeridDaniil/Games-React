@@ -41,23 +41,14 @@ const PlayerTimer = ({ color, timeMs, isActive, initialTimeMs }) => {
 
   return (
     <div className={classNames}>
-      <div className="game-timer__header">
-        <span className="game-timer__label">{label}</span>
-        {isActive && <span className="game-timer__live-dot" />}
-      </div>
-
-      <div className="game-timer__display">
-        <span className="game-timer__digit">{minutes}</span>
-        <span className="game-timer__separator">:</span>
-        <span className="game-timer__digit">{seconds}</span>
-      </div>
-
-      <div className="game-timer__bar-track">
-        <div
-          className="game-timer__bar-fill"
-          style={{ width: `${percent}%` }}
-        />
-      </div>
+      <span className="game-timer__label">
+        {label}
+        {isActive && <span className="visually-hidden">, to move</span>}
+      </span>
+      <span className="game-timer__time">{minutes}:{seconds}</span>
+      <span className="game-timer__bar-track" aria-hidden="true">
+        <span className="game-timer__bar-fill" style={{ width: `${percent}%` }} />
+      </span>
     </div>
   );
 };
@@ -88,14 +79,13 @@ const GameClock = ({ whiteTime, blackTime, turn, isRunning, onTick, initialTimeM
   }, [isTicking, turn]);
 
   return (
-    <div className="game-clock">
+    <div className="game-clock" role="group" aria-label="Clock">
       <PlayerTimer
         color="white"
         timeMs={whiteTime}
         isActive={turn === 'white' && isTicking}
         initialTimeMs={initialTimeMs}
       />
-      <div className="game-clock__vs">VS</div>
       <PlayerTimer
         color="black"
         timeMs={blackTime}

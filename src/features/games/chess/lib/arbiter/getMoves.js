@@ -202,20 +202,19 @@ export const getCastlingMoves = ({ position, castleDirection, figure, axisY, axi
   return moves;
 }
 
-export const getCastleDirection = ({ castleDirection, figure, axisY, axisX }) => {
-  if (figure.slice(6) === 'king') return 'none';
-  const direction = castleDirection[figure.slice(0, 5)];
-  const y = figure.slice(0, 5) === 'white' ? 0 : 7;
+// Castling rights of one colour after a move ('both', 'left' = queenside, 'right' = kingside, 'none').
+// A side survives only while its king and rook still stand on their starting squares, so king moves,
+// rook moves and rooks captured in their corner all count; a lost side never comes back.
+export const keepCastlingRights = (direction, position, color) => {
+  const y = color === 'white' ? 0 : 7;
+  const kingHome = position[y][4] === `${color}-king`;
+  const queenside = kingHome && ['both', 'left'].includes(direction) && position[y][0] === `${color}-rook`;
+  const kingside = kingHome && ['both', 'right'].includes(direction) && position[y][7] === `${color}-rook`;
 
-  if (Number(axisY) === y && Number(axisX) === 0) {
-    if (direction === 'both') return 'right';
-    if (direction === 'left') return 'none';
-  }
-
-  if (Number(axisY) === y && Number(axisX) === 7) {
-    if (direction === 'both') return 'left';
-    if (direction === 'right') return 'none';
-  }
+  if (queenside && kingside) return 'both';
+  if (queenside) return 'left';
+  if (kingside) return 'right';
+  return 'none';
 }
 
 export const getKingPosition = (position, player) => {

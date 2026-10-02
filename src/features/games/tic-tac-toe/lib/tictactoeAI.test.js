@@ -160,13 +160,19 @@ describe('getAIMove', () => {
       expect(getAIMove(board('XX.', '.O.', '...'), 3, 'unbeatable', 'O', 'X')).toBe(2);
     });
 
-    // KNOWN QUIRK (not changed in this stage): the minimax score grows with depth (10 + depth),
-    // so a forced win two plies later outranks an immediate win. The AI still wins the game.
-    it('may prefer a forced later win over an immediate one (current behaviour)', () => {
+    it('takes an immediate win over a forced later one', () => {
+      // X wins at once on 8 (the diagonal); 3 would also win, but only two plies later.
       const cells = board('XOO', '.X.', '...');
 
       expect(checkWinner([...cells.slice(0, 8), 'X'], 3)).toBe('X');
-      expect(getAIMove(cells, 3, 'unbeatable', 'X', 'O')).toBe(3);
+      expect(getAIMove(cells, 3, 'unbeatable', 'X', 'O')).toBe(8);
+    });
+
+    it('takes an immediate win on a larger board too', () => {
+      // O completes four in a row on the top row at once (index 3) instead of playing on.
+      const cells = board('OOO..', 'XX...', 'XX...', '.....', '.....');
+
+      expect(getAIMove(cells, 5, 'unbeatable', 'O', 'X')).toBe(3);
     });
 
     it('never loses a 3x3 game, moving first or second', () => {

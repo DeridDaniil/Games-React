@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { loadSession, login, logout, register, saveProfile } from './profileStorage';
-import { defaultAvatar } from './constants';
+import { LEGACY_DEFAULT_AVATAR, defaultAvatar } from './avatar';
 
 const USERS_KEY = 'games-react-users';
 const SESSION_KEY = 'games-react-session';
@@ -106,6 +106,23 @@ describe('login', () => {
 
     expect(profile.stats).toEqual({ ...defaultStats, chess: { wins: 3, losses: 1, draws: 0 } });
   });
+
+  it('shows the default avatar of older profiles as the current one without rewriting the stored profile', () => {
+    const users = storedUsers();
+    users.tester.avatar = LEGACY_DEFAULT_AVATAR;
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+    expect(login('tester', 'secret').profile.avatar).toBe(defaultAvatar);
+    expect(storedUsers().tester.avatar).toBe(LEGACY_DEFAULT_AVATAR);
+  });
+
+  it('keeps an uploaded photo as it is', () => {
+    const users = storedUsers();
+    users.tester.avatar = 'data:image/jpeg;base64,AAAA';
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+    expect(login('tester', 'secret').profile.avatar).toBe('data:image/jpeg;base64,AAAA');
+  });
 });
 
 describe('logout', () => {
@@ -151,6 +168,20 @@ describe('loadSession', () => {
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
 
     expect(loadSession().stats).toEqual(defaultStats);
+  });
+
+  it('shows the default avatar of older or avatar-less profiles as the current one', () => {
+    register('tester', 'Tester', 'secret');
+    const users = storedUsers();
+    users.tester.avatar = LEGACY_DEFAULT_AVATAR;
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+    expect(loadSession().avatar).toBe(defaultAvatar);
+
+    delete users.tester.avatar;
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+    expect(loadSession().avatar).toBe(defaultAvatar);
   });
 });
 

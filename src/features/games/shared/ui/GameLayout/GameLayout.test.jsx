@@ -4,17 +4,25 @@ import { render, screen } from '@testing-library/react';
 import GameLayout from './GameLayout';
 
 const renderLayout = (props) => render(
-  <GameLayout title="Some Game" board={<div>board</div>} controls={<div>controls</div>} {...props} />
+  <GameLayout
+    header={<h1>Some Game</h1>}
+    board={<div>board</div>}
+    controls={<div>controls</div>}
+    {...props}
+  />
 );
 
 describe('GameLayout', () => {
-  it('shows the title above the board area and the side controls', () => {
+  it('puts the header above the board and the side panel', () => {
     const { container } = renderLayout();
+    const root = container.firstElementChild;
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Some Game' })).toBeTruthy();
-    const body = container.querySelector('.game-layout__body');
-    expect([...body.children].map(child => child.textContent)).toEqual(['board', 'controls']);
-    expect(screen.getByText('board').parentElement.className).toBe('game-layout__board');
+    expect(root.firstElementChild).toBe(screen.getByRole('heading', { name: 'Some Game' }));
+    const body = root.querySelector('.game-layout__body');
+    expect([...body.children].map(child => [child.className, child.textContent])).toEqual([
+      ['game-layout__board', 'board'],
+      ['game-layout__side', 'controls']
+    ]);
   });
 
   it('adds the game class to the root element when given one', () => {
@@ -22,7 +30,7 @@ describe('GameLayout', () => {
 
     expect(container.firstElementChild.className).toBe('game-layout some-game');
 
-    rerender(<GameLayout title="Some Game" board={<div>board</div>} controls={<div>controls</div>} />);
+    rerender(<GameLayout header={<h1>Some Game</h1>} board={<div>board</div>} controls={<div>controls</div>} />);
 
     expect(container.firstElementChild.className).toBe('game-layout');
   });

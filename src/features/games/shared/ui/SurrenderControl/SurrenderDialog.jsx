@@ -1,68 +1,69 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import PropTypes from 'prop-types';
+import Modal from '../../../../../shared/ui/Modal/Modal';
+import Button from '../../../../../shared/ui/Button/Button';
 import './SurrenderDialog.scss';
 
-const SURRENDER_DELAY_MS = 2000;
-const CLOSE_ANIMATION_MS = 250;
+export const SURRENDER_DELAY_MS = 2000;
 
-// Confirm unlocks only after a short delay; both answers play the close animation first.
-const SurrenderDialog = ({ message, onCancel, onConfirm }) => {
+// Message and buttons of the confirmation. It is mounted afresh for every opening, so Confirm
+// always unlocks after the full delay; both buttons go inert as soon as the dialog starts closing.
+const SurrenderPrompt = ({ messageId, message, isClosing, onCancel, onConfirm }) => {
   const [canConfirm, setCanConfirm] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setCanConfirm(true), SURRENDER_DELAY_MS);
     return () => clearTimeout(timer);
   }, []);
 
-  const animateClose = useCallback((callback) => {
-    setIsClosing(true);
-    setTimeout(callback, CLOSE_ANIMATION_MS);
-  }, []);
-
-  const handleCancel = () => {
-    animateClose(onCancel);
-  };
-
-  const handleConfirm = () => {
-    if (!canConfirm) return;
-    animateClose(onConfirm);
-  };
-
   return (
-    <div className={isClosing ? 'game-surrender-dialog game-surrender-dialog--closing' : 'game-surrender-dialog'}>
-      <div className="game-surrender-dialog__backdrop" onClick={handleCancel} />
-      <div className="game-surrender-dialog__content">
-        <h2 className="game-surrender-dialog__title">Confirm Surrender</h2>
-        <p className="game-surrender-dialog__message">
-          {`Are you sure you want to surrender? ${message}`}
-        </p>
-        <div className="game-surrender-dialog__actions">
-          <button
-            type="button"
-            className="game-surrender-dialog__button game-surrender-dialog__button--cancel"
-            onClick={handleCancel}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className={
-              'game-surrender-dialog__button game-surrender-dialog__button--confirm ' +
-              (canConfirm ? 'game-surrender-dialog__button--active' : 'game-surrender-dialog__button--waiting')
-            }
-            disabled={!canConfirm}
-            onClick={handleConfirm}
-          >
-            <span className="game-surrender-dialog__button-label">Surrender</span>
-          </button>
-        </div>
+    <div className="surrender-dialog" style={{ '--surrender-delay': `${SURRENDER_DELAY_MS}ms` }}>
+      <p id={messageId} className="surrender-dialog__message">{`Are you sure you want to surrender? ${message}`}</p>
+      <div className="surrender-dialog__actions">
+        <Button variant="ghost" disabled={isClosing} onClick={onCancel}>Cancel</Button>
+        <Button
+          variant="danger"
+          className={canConfirm ? 'surrender-dialog__confirm' : 'surrender-dialog__confirm surrender-dialog__confirm--waiting'}
+          disabled={!canConfirm || isClosing}
+          onClick={onConfirm}
+        >
+          Surrender
+        </Button>
       </div>
     </div>
   );
 };
 
+SurrenderPrompt.propTypes = {
+  messageId: PropTypes.string.isRequired,
+  message: PropTypes.string.isRequired,
+  isClosing: PropTypes.bool.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  onConfirm: PropTypes.func.isRequired
+};
+
+// The confirmation in the shared dialog shell, described by its message so the consequence is
+// announced with the title; `session` changes with every opening.
+const SurrenderDialog = ({ isOpen, session, message, onCancel, onConfirm }) => {
+  const messageId = useId();
+
+  return (
+    <Modal isOpen={isOpen} onClose={onCancel} title="Confirm Surrender" describedBy={messageId}>
+      <SurrenderPrompt
+        key={session}
+        messageId={messageId}
+        message={message}
+        isClosing={!isOpen}
+        onCancel={onCancel}
+        onConfirm={onConfirm}
+      />
+    </Modal>
+  );
+};
+
 SurrenderDialog.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  session: PropTypes.number.isRequired,
   message: PropTypes.string.isRequired,
   onCancel: PropTypes.func.isRequired,
   onConfirm: PropTypes.func.isRequired

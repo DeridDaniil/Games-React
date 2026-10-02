@@ -1,75 +1,72 @@
+// The result sits on a compact panel over the dimmed squares; the board stays readable around it.
 .checkers-game-ends {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.75);
-  z-index: 10;
-  border-radius: 20px;
+  top: calc(var(--board-frame-width) + 1px);
+  left: calc(var(--board-frame-width) + 1px);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: calc(8 * var(--cell-size));
+  height: calc(8 * var(--cell-size));
+  padding: var(--space-4);
+  background-color: var(--color-scrim-board);
 
   .checkers-game-ends--inner {
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    height: 100%;
+    gap: var(--space-2);
+    min-width: min(100%, 260px);
+    padding: var(--space-5) var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface-raised);
+    box-shadow: var(--shadow-soft);
+    text-align: center;
+    animation: checkers-result-in var(--duration-slow) var(--ease-standard);
+  }
 
-    h1 {
-      margin: 0;
-      padding: 0;
-      line-height: normal;
+  h2 {
+    margin: 0;
+    font-size: var(--text-lg);
+  }
+
+  .button {
+    margin-top: var(--space-3);
+  }
+
+  // The checker images carry wide transparent margins, so the boxes are larger than the chess king's
+  // to look the same size.
+  .wins,
+  .draws {
+    height: 64px;
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+
+  .wins {
+    width: 64px;
+    background-position: center;
+
+    &.white {
+      background-image: url('../../assets/white-checker.png');
     }
 
-    .draws {
-      height: 90px;
-      width: 180px;
-      background-repeat: no-repeat, no-repeat;
-      background-size: contain;
-      background-position: left, right;
-      background-image: url('../../assets/white-checker.png'), url('../../assets/black-checker.png');
+    &.black {
+      background-image: url('../../assets/black-checker.png');
     }
+  }
 
-    .wins {
-      height: 90px;
-      width: 90px;
-      margin-top: 20px;
-      background-position: center;
-      background-size: contain;
-      background-repeat: no-repeat;
-
-      &.white {
-        background-image: url("../../assets/white-checker.png");
-      }
-      &.black {
-        background-image: url("../../assets/black-checker.png");
-      }
-    }
-
-    button {
-      margin-top: 40px;
-      position: relative;
-      border: none;
-      border-bottom: 2px solid white;
-      color: inherit;
-      font-family: inherit;
-      font-size: 24px;
-      background-color: transparent;
-      animation: checkersAnimButton 1.7s ease-in-out infinite;
-      cursor: pointer;
-    }
+  .draws {
+    width: 120px;
+    background-position: left, right;
+    background-image: url('../../assets/white-checker.png'), url('../../assets/black-checker.png');
   }
 }
 
-@keyframes checkersAnimButton {
-  0% {
-    scale: 1;
-  }
-
-  50% {
-    scale: 1.2;
-  }
-
-  100% {
-    scale: 1;
+@keyframes checkers-result-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
 }

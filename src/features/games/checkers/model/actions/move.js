@@ -79,3 +79,9 @@ export const surrender = () => {
     type: ActionTypes.SURRENDER
   }
 };
+
+export const markResultRecorded = () => {
+  return {
+    type: ActionTypes.RESULT_RECORDED
+  }
+};

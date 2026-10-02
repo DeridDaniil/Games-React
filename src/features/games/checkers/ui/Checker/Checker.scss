@@ -1,10 +1,18 @@
 .checker {
-  width: 90px;
-  height: 90px;
   position: absolute;
+  width: var(--cell-size);
+  height: var(--cell-size);
   background-size: 150%;
   background-position: center;
   background-repeat: no-repeat;
+
+  &[draggable='true'] {
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
 
   &.white-checker {
     background-image: url('../../assets/white-checker.png');
@@ -96,19 +104,17 @@
   &.p-75 {transform: translate(500%, 0);}
   &.p-76 {transform: translate(600%, 0);}
 
-
+  // The checker that has to capture this turn: a soft gold ring on its rim.
+  &.forced-capture::after {
+    content: '';
+    position: absolute;
+    inset: 9%;
+    border: max(2.5px, calc(var(--cell-size) * 0.045)) solid var(--board-forced);
+    border-radius: 50%;
+  }
 
   &.capture-blocked {
-    opacity: 0.4;
+    opacity: 0.45;
     cursor: not-allowed;
-  }
-}
-
-@keyframes forced-pulse {
-  0%, 100% {
-    box-shadow: 0 0 12px 4px rgba(255, 50, 50, 0.8);
-  }
-  50% {
-    box-shadow: 0 0 20px 8px rgba(255, 50, 50, 1);
   }
 }

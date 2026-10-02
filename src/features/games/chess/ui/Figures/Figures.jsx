@@ -1,12 +1,10 @@
 import { useRef } from 'react';
 import { useChessContext } from '../../model/Context';
-import { clearCandidates, makeNewMove } from '../../model/actions/move';
+import { clearCandidates, playMove } from '../../model/actions/move';
 import Figure from '../Figure/Figure';
 import arbiter from '../../lib/arbiter/arbiter';
 import { openPromotion } from '../../model/actions/popup';
-import { getCastleDirection } from '../../lib/arbiter/getMoves';
-import { detectCheckmate, detectInsufficientMaterial, detectStalemate, updateCastling } from '../../model/actions/game';
-import { getNewMoveNotation } from '../../lib/helper';
+import { getNewMoveNotation, readDraggedFigure } from '../../lib/helper';
 import './Figures.scss';
 
 function Figures() {
@@ -23,41 +21,25 @@ function Figures() {
   }
 
   const openPromotionBox = ({ axisY, axisX, y, x }) => {
-    dispatch(openPromotion({ axisY: Number(axisY), axisX: Number(axisX), y, x }));
+    dispatch(openPromotion({ axisY, axisX, y, x }));
   }
 
-  const updateCastlingState = ({ figure, axisY, axisX }) => {
-    const direction = getCastleDirection({
-      castleDirection: chessState.castleDirection,
-      figure, axisY, axisX
-    });
-
-    if (direction) dispatch(updateCastling(direction));
-  }
-
+  // Highlights can outlive a drag that ended off the board, so the dropped data must describe a
+  // piece of the side to move on its own square before a highlighted square is accepted.
   const move = e => {
     const { y, x } = calculateCoord(e);
-    const [figure, axisY, axisX] = e.dataTransfer.getData('text').split(', ');
-    if (chessState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
-      const opponent = figure.slice(0, 5) == 'white' ? 'black' : 'white';
-      const castleDirection = chessState.castleDirection[opponent];
+    const dragged = readDraggedFigure(e.dataTransfer.getData('text'), position, chessState.turn);
+    if (dragged && chessState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
+      const { figure, axisY, axisX } = dragged;
 
       if (figure === 'white-pawn' && y === 7 || figure === 'black-pawn' && y === 0) {
         openPromotionBox({ axisY, axisX, y, x });
         return;
       }
 
-      if (figure.slice(6) === 'rook' || figure.slice(6) === 'king') {
-        updateCastlingState({ figure, axisY, axisX });
-      }
-
       const newPosition = arbiter.performMove({ position, figure, axisY, axisX, y, x });
       const newMove = getNewMoveNotation({ position, figure, axisY, axisX, y, x });
-      dispatch(makeNewMove({ newPosition, newMove }));
-
-      if (arbiter.insufficientMaterial(newPosition)) dispatch(detectInsufficientMaterial());
-      else if (arbiter.isStalemate(newPosition, opponent, castleDirection)) dispatch(detectStalemate());
-      else if (arbiter.isCheckmate(newPosition, opponent, castleDirection)) dispatch(detectCheckmate(figure.slice(0, 5)));
+      playMove({ state: chessState, newPosition, newMove }).forEach(dispatch);
     }
     dispatch(clearCandidates());
   }

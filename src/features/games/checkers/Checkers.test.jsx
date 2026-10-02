@@ -2,11 +2,23 @@
 // Whole-game flows through the real components and reducer, driven the way a browser drives
 // HTML5 drag and drop. Assertions are about what the player sees, not about internal actions.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, createEvent, fireEvent, render, screen } from '@testing-library/react';
+import { act, createEvent, fireEvent, render, screen, within } from '@testing-library/react';
 import Checkers from './Checkers';
 import { ProfileProvider } from '../../profile/model/ProfileContext';
 import { loadSession, register } from '../../profile/lib/profileStorage';
-import { sq } from '../shared/test/boardTestUtils';
+import { boardWith, sq } from '../shared/test/boardTestUtils';
+
+// Lets a test start the game from a chosen position; null keeps the real initial state.
+const start = vi.hoisted(() => ({ state: null }));
+vi.mock('./model/constant', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, get initCheckersGame() { return start.state ?? actual.initCheckersGame; } };
+});
+const { initCheckersGame } = await vi.importActual('./model/constant');
+
+const startFrom = (pieces, turn = 'white') => {
+  start.state = { ...initCheckersGame, position: [boardWith(pieces)], turn };
+};
 
 const BOARD_PX = 800;
 const CELL_PX = BOARD_PX / 8;
@@ -71,9 +83,12 @@ const renderCheckers = () => {
     dropOn(dataTransfer, target);
   };
   const play = (...moves) => moves.forEach(([from, target]) => move(from, target));
-  const movesList = () => [...container.querySelector('.game-move-history').children].map(row => row.textContent);
+  const movesList = () => [...container.querySelectorAll('.game-move-history__move')].map(move => move.textContent);
+  // Each numbered row of the moves panel as "<number> <white move> <black move>".
+  const historyRows = () => [...container.querySelectorAll('.game-move-history__row')]
+    .map(row => [...row.children].map(cell => cell.textContent).join(' '));
 
-  return { pieceOn, draggable, pickUp, dropOn, move, play, movesList };
+  return { pieceOn, draggable, pickUp, dropOn, move, play, movesList, historyRows };
 };
 
 // The timer card is the closest ancestor with a colour modifier (game-timer--white / --black).
@@ -84,7 +99,7 @@ const checkersStats = () => loadSession().stats.checkers;
 const surrender = () => {
   fireEvent.click(screen.getByText('Surrender'));
   advance(2000);
-  fireEvent.click(screen.getByRole('button', { name: 'Surrender' }));
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Surrender' }));
   advance(250);
 };
 
@@ -97,6 +112,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   localStorage.clear();
+  start.state = null;
 });
 
 describe('Checkers (whole game)', () => {
@@ -133,12 +149,50 @@ describe('Checkers (whole game)', () => {
     // The chain is not over: only the capturing checker may move, and it is still Black's turn.
     expect(game.draggable('black')).toEqual(['c3']);
     expect(game.draggable('white')).toEqual([]);
+    // An unfinished chain is not a move yet.
+    expect(game.movesList()).toEqual(['a3-b4', 'b6-a5', 'c3-d4']);
 
     game.move('c3', 'e5');
     expect(game.pieceOn('d4')).toBeNull();
     expect(game.pieceOn('e5')).toBe('black-checker');
     expect(game.draggable('black')).toEqual([]);
-    expect(game.movesList().slice(-2)).toEqual(['a5xc3', 'c3xe5']);
+    expect(game.movesList()).toEqual(['a3-b4', 'b6-a5', 'c3-d4', 'a5xc3xe5']);
+    // One numbered row per pair of turns, however many jumps a turn had.
+    expect(game.historyRows()).toEqual(['1 a3-b4 b6-a5', '2 c3-d4 a5xc3xe5']);
+  });
+
+  it('takes back a whole chain capture in one go and gives the turn back to its player', () => {
+    const game = renderCheckers();
+    game.play(['a3', 'b4'], ['b6', 'a5'], ['c3', 'd4'], ['a5', 'c3'], ['c3', 'e5']);
+
+    fireEvent.click(screen.getByText('Take Back'));
+
+    expect(game.pieceOn('a5')).toBe('black-checker');
+    expect(game.pieceOn('b4')).toBe('white-checker');
+    expect(game.pieceOn('d4')).toBe('white-checker');
+    expect(game.pieceOn('c3')).toBeNull();
+    expect(game.pieceOn('e5')).toBeNull();
+    expect(game.movesList()).toEqual(['a3-b4', 'b6-a5', 'c3-d4']);
+    expect(game.draggable('black')).toEqual(['a5']);
+    expect(game.draggable('white')).toEqual([]);
+  });
+
+  it('takes back an unfinished chain to the start of the turn, clock included', () => {
+    const game = renderCheckers();
+    game.play(['a3', 'b4'], ['b6', 'a5'], ['c3', 'd4']);
+    advance(4000);
+    game.move('a5', 'c3');
+    advance(3000);
+    expect(clock('Black')).toBe('04:53');
+
+    fireEvent.click(screen.getByText('Take Back'));
+
+    expect(game.pieceOn('a5')).toBe('black-checker');
+    expect(game.pieceOn('b4')).toBe('white-checker');
+    expect(game.pieceOn('c3')).toBeNull();
+    expect(game.movesList()).toEqual(['a3-b4', 'b6-a5', 'c3-d4']);
+    expect(game.draggable('black')).toEqual(['a5']);
+    expect(clock('Black')).toBe('05:00');
   });
 
   it('starts the clock after the first completed move', () => {
@@ -163,12 +217,33 @@ describe('Checkers (whole game)', () => {
     expect(checkersStats()).toEqual({ wins: 1, losses: 0, draws: 0 });
   });
 
+  it('resumes a finished game on Take Back and still records that game only once', () => {
+    const game = renderCheckers();
+    game.move('c3', 'd4');
+    advance(5 * 60 * 1000);
+    expect(checkersStats()).toEqual({ wins: 1, losses: 0, draws: 0 });
+
+    fireEvent.click(screen.getByText('Take Back'));
+
+    expect(screen.queryByRole('heading', { name: 'White wins on time' })).toBeNull();
+    expect(game.pieceOn('c3')).toBe('white-checker');
+    expect(game.draggable('white')).toContain('c3');
+
+    game.move('c3', 'd4');
+    advance(5 * 60 * 1000);
+
+    expect(screen.getByRole('heading', { name: 'White wins on time' })).toBeTruthy();
+    expect(checkersStats()).toEqual({ wins: 1, losses: 0, draws: 0 });
+  });
+
   it('ends the game against the side to move on surrender and records it only once', () => {
     const game = renderCheckers();
     game.move('c3', 'd4');
 
     surrender();
     expect(screen.getByRole('heading', { name: 'Black surrendered' })).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Black surrendered');
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'New Game' }));
     expect(checkersStats()).toEqual({ wins: 1, losses: 0, draws: 0 });
 
     // The Surrender button stays clickable next to the game-over overlay.
@@ -177,14 +252,14 @@ describe('Checkers (whole game)', () => {
     expect(checkersStats()).toEqual({ wins: 1, losses: 0, draws: 0 });
   });
 
-  it('opens the surrender dialog right after its tile, inside the actions row', () => {
+  it('asks for the surrender in a modal dialog with the checkers message', () => {
     renderCheckers();
 
     fireEvent.click(screen.getByText('Surrender'));
 
-    const tile = screen.getByText('Surrender', { selector: '.game-action span' }).parentElement;
-    expect(tile.parentElement.classList.contains('game-control-panel__actions')).toBe(true);
-    expect(tile.nextElementSibling.classList.contains('game-surrender-dialog')).toBe(true);
+    const dialog = screen.getByRole('dialog', { name: 'Confirm Surrender' });
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(within(dialog).getByText('Are you sure you want to surrender? This will end the current game.')).toBeTruthy();
   });
 
   it('takes back the last move from the Take Back tile', () => {
@@ -197,5 +272,46 @@ describe('Checkers (whole game)', () => {
     expect(game.pieceOn('b6')).toBe('black-checker');
     expect(game.pieceOn('d4')).toBe('white-checker');
     expect(game.movesList()).toEqual(['c3-d4']);
+  });
+});
+
+describe('Checkers chain captures from chosen positions', () => {
+  it('lists a triple capture as one move and takes it back in one go', () => {
+    startFrom({ a3: 'white-checker', b4: 'black-checker', d6: 'black-checker', f6: 'black-checker', h8: 'black-checker' });
+    const game = renderCheckers();
+
+    game.play(['a3', 'c5'], ['c5', 'e7'], ['e7', 'g5']);
+
+    expect(game.movesList()).toEqual(['a3xc5xe7xg5']);
+    expect(['b4', 'd6', 'f6'].map(game.pieceOn)).toEqual([null, null, null]);
+    expect(game.pieceOn('g5')).toBe('white-checker');
+    expect(game.draggable('black')).toEqual(['h8']);
+
+    fireEvent.click(screen.getByText('Take Back'));
+
+    expect(game.movesList()).toEqual([]);
+    expect(game.pieceOn('a3')).toBe('white-checker');
+    expect(['b4', 'd6', 'f6'].map(game.pieceOn)).toEqual(['black-checker', 'black-checker', 'black-checker']);
+    expect(game.pieceOn('g5')).toBeNull();
+    expect(game.draggable('white')).toEqual(['a3']);
+  });
+
+  it('promotes in the middle of a chain, lists it as one move and undoes the promotion with it', () => {
+    startFrom({ c6: 'white-checker', d7: 'black-checker', f7: 'black-checker', h2: 'black-checker' });
+    const game = renderCheckers();
+
+    game.play(['c6', 'e8'], ['e8', 'g6']);
+
+    expect(game.pieceOn('g6')).toBe('white-queen');
+    expect(game.movesList()).toEqual(['c6xe8xg6']);
+
+    fireEvent.click(screen.getByText('Take Back'));
+
+    expect(game.pieceOn('c6')).toBe('white-checker');
+    expect(game.pieceOn('d7')).toBe('black-checker');
+    expect(game.pieceOn('f7')).toBe('black-checker');
+    expect(game.pieceOn('e8')).toBeNull();
+    expect(game.pieceOn('g6')).toBeNull();
+    expect(game.movesList()).toEqual([]);
   });
 });

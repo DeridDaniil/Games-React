@@ -1,39 +1,39 @@
-.popup__inner {
+// Promotion choice: the four pieces in a row on a small panel over the dimmed board.
+.popup__inner.promotion-choise {
   position: absolute;
-  top: 34.7%;
-  left: 34.7%;
-  width: 180px;
-  height: 180px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0px 0px 25px 10px rgba(0, 0, 0, 0.25);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-  backdrop-filter: blur(10px);
-  transform: scale(1.2);
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(4, var(--cell-size));
+  gap: var(--space-1);
+  width: max-content;
+  height: max-content;
+  margin: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-raised);
+  box-shadow: var(--shadow-soft);
+  animation: promotion-in var(--duration-normal) var(--ease-standard);
 
-  &.promotion-choise {
-    .figure {
-      &:hover {
-        transform: scale(1.05);
-      }
+  .figure {
+    position: relative;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-standard);
 
-      &:is(.white-queen, .black-queen) {
-        left: 9%;
-      }
-
-      &:is(.white-rook, .black-rook) {
-        left: 50%;
-      }
-
-      &:is(.white-bishop, .black-bishop) {
-        top: 49%;
-      }
-
-      &:is(.white-knight, .black-knight) {
-        top: 49%;
-        left: 50%;
-      }
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-surface-hover);
     }
+  }
+}
+
+@keyframes promotion-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
 }

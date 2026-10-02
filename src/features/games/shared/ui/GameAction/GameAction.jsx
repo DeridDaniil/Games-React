@@ -1,16 +1,22 @@
 import PropTypes from 'prop-types';
-import './GameAction.scss';
+import Button from '../../../../../shared/ui/Button/Button';
 
-// Large action tile under the move history (Take Back, Surrender). Still a clickable <div>:
-// switching to <button> belongs to the planned accessibility pass, not to this refactor.
-const GameAction = ({ variant = 'default', onClick, children }) => (
-  <div className={variant === 'default' ? 'game-action' : `game-action game-action--${variant}`} onClick={onClick}>
-    <span>{children}</span>
-  </div>
+// An action under the move history (Take Back, Surrender): a quiet secondary button, or a danger
+// one for actions that end the game.
+const GameAction = ({ variant = 'default', icon = null, onClick, children }) => (
+  <Button
+    variant={variant === 'danger' ? 'danger' : 'secondary'}
+    icon={icon}
+    className="game-action"
+    onClick={onClick}
+  >
+    {children}
+  </Button>
 );
 
 GameAction.propTypes = {
   variant: PropTypes.oneOf(['default', 'danger']),
+  icon: PropTypes.node,
   onClick: PropTypes.func.isRequired,
   children: PropTypes.node.isRequired
 };

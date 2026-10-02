@@ -105,10 +105,11 @@ function mediumMove(cells, size, aiMark, humanMark) {
 // ========== UNBEATABLE: minimax with alpha-beta ==========
 const MAX_DEPTH = { 3: Infinity, 5: 4, 7: 4 };
 
+// A win is worth more the sooner it comes, a loss costs less the later it comes.
 function minimax(cells, size, depth, isMaximizing, aiMark, humanMark, alpha, beta, maxDepth) {
   const winner = checkWinner(cells, size);
-  if (winner === aiMark) return 10 + depth;
-  if (winner === humanMark) return -10 - depth;
+  if (winner === aiMark) return 10 - depth;
+  if (winner === humanMark) return depth - 10;
   const empty = getEmptyCells(cells);
   if (empty.length === 0 || depth >= maxDepth) return 0;
 

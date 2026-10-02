@@ -11,7 +11,8 @@ export const ActionTypes = {
   'START_CLOCK': 'START_CLOCK',
   'TICK': 'TICK',
   'TIMEOUT': 'TIMEOUT',
-  'SURRENDER': 'SURRENDER'
+  'SURRENDER': 'SURRENDER',
+  'RESULT_RECORDED': 'RESULT_RECORDED'
 }
 
 export const Status = {

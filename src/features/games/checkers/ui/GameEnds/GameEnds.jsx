@@ -1,22 +1,26 @@
 import { useEffect, useRef } from 'react';
 import { useCheckersContext } from '../../model/Context';
 import { Status } from '../../model/types';
-import { setupNewGame } from '../../model/actions/move';
+import { markResultRecorded, setupNewGame } from '../../model/actions/move';
 import { initCheckersGame } from '../../model/constant';
 import { useProfile } from '../../../../profile/model/ProfileContext';
+import Button from '../../../../../shared/ui/Button/Button';
 import './GameEnds.scss';
 
 const GameEnds = () => {
-  const { checkersState: { status }, dispatch } = useCheckersContext();
+  const { checkersState: { status, resultRecorded }, dispatch } = useCheckersContext();
   const { recordResult } = useProfile();
   const recordedRef = useRef(null);
+  const panelRef = useRef(null);
 
   const isGameOver = status !== Status.ongoing;
   const isDraw = status === Status.draw;
   const isWhiteWin = status === Status.whiteWins || status === Status.whiteOnTime || status === Status.blackSurrender;
 
+  // One result per game: the ref covers StrictMode's repeated effect, `resultRecorded` in the game
+  // state covers a game that Take Back resumed after it had ended (this overlay unmounts meanwhile).
   useEffect(() => {
-    if (!isGameOver || recordedRef.current === status) return;
+    if (!isGameOver || resultRecorded || recordedRef.current === status) return;
     recordedRef.current = status;
 
     if (isDraw) {
@@ -26,7 +30,14 @@ const GameEnds = () => {
     } else {
       recordResult('checkers', 'losses');
     }
-  }, [isGameOver, status, isDraw, isWhiteWin, recordResult]);
+    dispatch(markResultRecorded());
+  }, [isGameOver, status, isDraw, isWhiteWin, resultRecorded, recordResult, dispatch]);
+
+  // When the game ends, focus moves to New Game (its only button), unless an open dialog holds it.
+  useEffect(() => {
+    if (!isGameOver || document.activeElement?.closest('[role="dialog"]')) return;
+    panelRef.current?.querySelector('button')?.focus();
+  }, [isGameOver]);
 
   if (!isGameOver) return null;
 
@@ -37,14 +48,17 @@ const GameEnds = () => {
 
   return (
     <div className="checkers-game-ends">
-      <div className="checkers-game-ends--inner">
-        <h1>{isDraw ? 'Draw' : status}</h1>
+      <div ref={panelRef} className="checkers-game-ends--inner">
         {!isDraw ? (
           <div className={`wins ${isWhiteWin ? 'white' : 'black'}`}></div>
         ) : (
           <div className="draws"></div>
         )}
-        <button onClick={newGame}>New Game</button>
+        {/* The result is announced as an alert when the panel appears. */}
+        <div role="alert">
+          <h2>{isDraw ? 'Draw' : status}</h2>
+        </div>
+        <Button variant="primary" onClick={newGame}>New Game</Button>
       </div>
     </div>
   )

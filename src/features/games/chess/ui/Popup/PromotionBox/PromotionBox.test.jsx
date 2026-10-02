@@ -8,10 +8,10 @@ import { initChessGame } from '../../../model/constant';
 import { ActionTypes, Status } from '../../../model/types';
 import { boardWith, pieceAt } from '../../../../shared/test/boardTestUtils';
 
-const renderPromotion = ({ position, promotionSquare }) => {
+const renderPromotion = ({ position, promotionSquare, turn = 'white', status = Status.promoting }) => {
   const dispatch = vi.fn();
   const onClosePopup = vi.fn();
-  const chessState = { ...initChessGame, position: [position], status: Status.promoting, promotionSquare };
+  const chessState = { ...initChessGame, position: [position], turn, status, promotionSquare };
 
   const { container } = render(
     <ChessContext.Provider value={{ chessState, dispatch }}>
@@ -51,8 +51,6 @@ describe('PromotionBox', () => {
       .forEach(figure => expect(black.container.querySelector(`.${figure}`)).not.toBeNull());
   });
 
-  // KNOWN QUIRK (not changed in this stage): the promotion suffix is colour initial + piece
-  // letter(s) ("=WQ", "=WKN") instead of standard notation ("=Q", "=N"); it is shown in the moves list.
   it('replaces the pawn with the chosen piece and records the move', () => {
     const { choose, types, payloadOf, onClosePopup } = renderPromotion(whitePromotion);
 
@@ -63,7 +61,23 @@ describe('PromotionBox', () => {
     const { newPosition, newMove } = payloadOf(ActionTypes.NEW_MOVE);
     expect(pieceAt(newPosition, 'a7')).toBe('');
     expect(pieceAt(newPosition, 'a8')).toBe('white-queen');
-    expect(newMove).toBe('a8=WQ');
+    expect(newMove).toBe('a8=Q');
+  });
+
+  it('writes each promotion piece with its own letter and no colour', () => {
+    const black = { position: boardWith({ h2: 'black-pawn', e1: 'white-king', e8: 'black-king' }), promotionSquare: { axisY: 1, axisX: 7, y: 0, x: 7 }, turn: 'black' };
+    const cases = [['white-rook', 'a8=R'], ['white-bishop', 'a8=B'], ['white-knight', 'a8=N']];
+
+    cases.forEach(([figure, expected]) => {
+      const { choose, payloadOf } = renderPromotion(whitePromotion);
+      choose(figure);
+      expect(payloadOf(ActionTypes.NEW_MOVE).newMove).toBe(expected);
+      cleanup();
+    });
+
+    const { choose, payloadOf } = renderPromotion(black);
+    choose('black-queen');
+    expect(payloadOf(ActionTypes.NEW_MOVE).newMove).toBe('h1=Q');
   });
 
   it('supports under-promotion with a capture', () => {
@@ -77,12 +91,10 @@ describe('PromotionBox', () => {
     const { newPosition, newMove } = payloadOf(ActionTypes.NEW_MOVE);
     expect(pieceAt(newPosition, 'a8')).toBe('white-knight');
     expect(pieceAt(newPosition, 'b7')).toBe('');
-    expect(newMove).toBe('bxa8=WKN');
+    expect(newMove).toBe('bxa8=N');
   });
 
-  // KNOWN BUG (not fixed in this stage): game-over detection only runs in Figures.jsx,
-  // so a promotion that checkmates, stalemates or leaves insufficient material is not detected.
-  it('does not check for game over after promoting (current behaviour, known bug)', () => {
+  it('ends the game when the promotion checkmates, like any other move', () => {
     const { choose, types, payloadOf } = renderPromotion({
       position: boardWith({ a7: 'white-pawn', g6: 'white-king', h8: 'black-king' }),
       promotionSquare: { axisY: 6, axisX: 0, y: 7, x: 0 }
@@ -92,8 +104,35 @@ describe('PromotionBox', () => {
 
     const { newPosition } = payloadOf(ActionTypes.NEW_MOVE);
     expect(arbiter.isCheckmate(newPosition, 'black', 'none')).toBe(true);
-    expect(types()).not.toContain(ActionTypes.WIN);
-    expect(types()).not.toContain(ActionTypes.STALEMATE);
-    expect(types()).not.toContain(ActionTypes.INSUFFICIENT_MATERIAL);
+    expect(types()).toEqual([ActionTypes.CLEAR_CANDIDATE_MOVES, ActionTypes.NEW_MOVE, ActionTypes.WIN]);
+    expect(payloadOf(ActionTypes.WIN)).toBe('white');
+  });
+
+  it('ends the game in a draw when the promotion stalemates', () => {
+    const { choose, types } = renderPromotion({
+      position: boardWith({ g7: 'white-pawn', c1: 'white-king', a1: 'black-king' }),
+      promotionSquare: { axisY: 6, axisX: 6, y: 7, x: 6 }
+    });
+
+    choose('white-queen');
+
+    expect(types()).toEqual([ActionTypes.CLEAR_CANDIDATE_MOVES, ActionTypes.NEW_MOVE, ActionTypes.STALEMATE]);
+  });
+
+  it('ends the game in a draw when an under-promotion leaves insufficient material', () => {
+    const { choose, types } = renderPromotion({
+      position: boardWith({ c7: 'white-pawn', b6: 'white-king', a8: 'black-king' }),
+      promotionSquare: { axisY: 6, axisX: 2, y: 7, x: 2 }
+    });
+
+    choose('white-knight');
+
+    expect(types()).toEqual([ActionTypes.CLEAR_CANDIDATE_MOVES, ActionTypes.NEW_MOVE, ActionTypes.INSUFFICIENT_MATERIAL]);
+  });
+
+  it('shows nothing once the game is over, even with a promotion square left', () => {
+    const { container } = renderPromotion({ ...whitePromotion, status: Status.blackOnTime });
+
+    expect(container.querySelector('.promotion-choise')).toBeNull();
   });
 });

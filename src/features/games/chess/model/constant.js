@@ -16,6 +16,10 @@ export const initChessGame = {
     white: 'both',
     black: 'both'
   },
+  // The castling rights before every move played, so Take Back can restore them exactly.
+  castlingHistory: [],
+  // Whether this game's result is in the profile already; a game resumed by Take Back keeps it.
+  resultRecorded: false,
   whiteTime: DEFAULT_TIME_CONTROL_MS,
   blackTime: DEFAULT_TIME_CONTROL_MS,
   turnStartTimes: { whiteTime: DEFAULT_TIME_CONTROL_MS, blackTime: DEFAULT_TIME_CONTROL_MS },

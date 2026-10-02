@@ -1,0 +1,92 @@
+@use '../../../../shared/styles/breakpoints' as bp;
+
+// Edit mode is unmistakable: the header turns into a raised sheet and the photo gets a sage ring.
+.profile-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+
+  @include bp.below(bp.$phone) {
+    padding: var(--space-5) var(--space-4);
+  }
+}
+
+.profile-edit__title {
+  margin: 0;
+  font-size: var(--text-xl);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.profile-edit__photo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+
+  @include bp.below(bp.$phone) {
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+}
+
+.profile-edit__avatar {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--color-surface-raised);
+  box-shadow:
+    0 0 0 3px var(--color-surface),
+    0 0 0 5px var(--color-accent);
+  object-fit: cover;
+
+  @include bp.below(bp.$phone) {
+    width: 72px;
+    height: 72px;
+  }
+}
+
+.profile-edit__photo-body {
+  min-width: 0;
+}
+
+.profile-edit__photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+// Quiet danger: a ghost button in terracotta text, without the filled wash of a real danger button.
+.button.profile-edit__remove {
+  color: var(--color-danger);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-warm-soft);
+    color: var(--color-danger);
+  }
+}
+
+.profile-edit__hint {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.profile-edit__error {
+  margin: var(--space-2) 0 0;
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
+.profile-edit__name {
+  max-width: 360px;
+}
+
+.profile-edit__actions {
+  display: flex;
+  gap: var(--space-2);
+}

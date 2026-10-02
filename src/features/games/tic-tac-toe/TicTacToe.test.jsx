@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import TicTacToe from './TicTacToe';
 import TicTacToeSettings from './ui/Settings/TicTacToeSettings';
 import { TicTacToeSettingsProvider } from './model/TicTacToeSettingsContext';
@@ -20,7 +20,7 @@ afterEach(() => {
 
 // Default settings: friend mode on a 3x3 board, X moves first.
 const renderGame = ({ withSettings = false } = {}) => {
-  const { container } = render(
+  const { container, unmount } = render(
     <ProfileProvider>
       <TicTacToeSettingsProvider>
         {withSettings && <TicTacToeSettings />}
@@ -32,9 +32,13 @@ const renderGame = ({ withSettings = false } = {}) => {
   const cells = () => [...container.querySelectorAll('.tictactoe .cell')];
   const play = (...indices) => indices.forEach(index => fireEvent.click(cells()[index]));
   const marks = () => cells().map(cell => cell.textContent || '.').join('');
+  const choose = (option) => fireEvent.click(screen.getByRole('button', { name: option }));
+  const restart = () => fireEvent.click(screen.getByRole('button', { name: 'Restart' }));
 
-  return { play, marks };
+  return { cells, play, marks, choose, restart, unmount };
 };
+
+const count = (text, mark) => [...text].filter(cell => cell === mark).length;
 
 const tictactoeStats = () => loadSession().stats.tictactoe;
 
@@ -129,5 +133,227 @@ describe('TicTacToe (vs computer)', () => {
     act(() => { vi.advanceTimersByTime(400); });
     expect(marks()).toBe('XO.X..O..');
     expect(screen.getByRole('heading', { name: 'Your Move — X' })).toBeTruthy();
+  });
+});
+
+describe('TicTacToe board cells', () => {
+  const unavailableCells = () => within(screen.getByRole('group', { name: 'Board' }))
+    .getAllByRole('button')
+    .filter(cell => cell.getAttribute('aria-disabled') === 'true');
+
+  it('are labelled buttons that say whether they can still be played', () => {
+    renderGame();
+    const corner = screen.getByRole('button', { name: 'Row 1 column 1, empty' });
+
+    expect(corner.getAttribute('type')).toBe('button');
+    expect(corner.getAttribute('aria-disabled')).toBeNull();
+
+    fireEvent.click(corner);
+
+    expect(screen.getByRole('button', { name: 'Row 1 column 1, X' }).getAttribute('aria-disabled')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Row 3 column 3, empty' }).getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('are all unavailable once the game is over, and the result is shown beside the board', () => {
+    const { play } = renderGame();
+    // The live region exists before the result, so the result is announced when it appears.
+    expect(screen.getByRole('status').textContent).toBe('');
+
+    play(0, 3, 1, 4, 2);
+
+    expect(unavailableCells()).toHaveLength(9);
+    expect(screen.getByRole('status').textContent).toBe('Winner — X');
+  });
+
+  it('are unavailable while the computer is thinking', () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const { play } = renderGame({ withSettings: true });
+    fireEvent.click(screen.getByRole('button', { name: 'vs Computer' }));
+
+    play(0);
+    expect(unavailableCells()).toHaveLength(9);
+
+    act(() => { vi.advanceTimersByTime(400); });
+    expect(unavailableCells()).toHaveLength(2);
+  });
+});
+
+describe('TicTacToe computer moves and restarts', () => {
+  const think = () => act(() => { vi.advanceTimersByTime(400); });
+
+  // vs Computer, the computer playing X: it is thinking about its first move straight away.
+  const computerFirst = () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const game = renderGame({ withSettings: true });
+    game.choose('vs Computer');
+    game.choose('O (second)');
+    expect(screen.getByRole('heading', { name: 'Computer is thinking...' })).toBeTruthy();
+    return game;
+  };
+
+  it('lets the computer playing X start again after a restart while it was thinking', () => {
+    const game = computerFirst();
+
+    game.restart();
+    think();
+
+    expect(count(game.marks(), 'X')).toBe(1);
+    expect(screen.getByRole('heading', { name: 'Your Move — O' })).toBeTruthy();
+  });
+
+  it('never lets the timer of the old game add a second move', () => {
+    const game = computerFirst();
+    act(() => { vi.advanceTimersByTime(200); });
+
+    game.restart();
+    think();
+    think();
+
+    expect(count(game.marks(), 'X')).toBe(1);
+    expect(count(game.marks(), 'O')).toBe(0);
+  });
+
+  it('keeps exactly one pending computer move after several quick restarts', () => {
+    const game = computerFirst();
+
+    game.restart();
+    game.restart();
+    game.restart();
+
+    expect(vi.getTimerCount()).toBe(1);
+    think();
+    expect(count(game.marks(), 'X')).toBe(1);
+  });
+
+  it('only gives the new game a computer move when the settings change while it thinks', () => {
+    const game = computerFirst();
+
+    game.choose('X (first)');
+    think();
+
+    expect(game.marks()).toBe('.........');
+    expect(screen.getByRole('heading', { name: 'Your Move — X' })).toBeTruthy();
+
+    game.choose('O (second)');
+    game.choose('5x5');
+    think();
+
+    expect(game.cells()).toHaveLength(25);
+    expect(count(game.marks(), 'X')).toBe(1);
+  });
+
+  it('leaves no timer behind when the game is closed while the computer thinks', () => {
+    const game = computerFirst();
+
+    game.unmount();
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe('TicTacToe settings', () => {
+  it('keeps the game when the option that is already selected is clicked', () => {
+    const game = renderGame({ withSettings: true });
+    game.play(0, 4);
+
+    game.choose('vs Friend');
+    game.choose('3x3');
+    game.choose('X (first)');
+
+    expect(game.marks()).toBe('X...O....');
+  });
+
+  it('starts a new game when a different option is chosen', () => {
+    const game = renderGame({ withSettings: true });
+    game.play(0, 4);
+
+    game.choose('5x5');
+
+    expect(game.cells()).toHaveLength(25);
+    expect(count(game.marks(), '.')).toBe(25);
+  });
+
+  it('says that only a different option starts a new game', () => {
+    renderGame({ withSettings: true });
+
+    expect(screen.getByText('Choosing a different option starts a new game.')).toBeTruthy();
+  });
+});
+
+describe('TicTacToe keyboard navigation', () => {
+  const key = (cell, name) => fireEvent.keyDown(cell, { key: name });
+  const tabStops = (cells) => cells.filter(cell => cell.tabIndex === 0);
+
+  it('puts a single cell of the board in the tab order', () => {
+    const game = renderGame({ withSettings: true });
+    expect(tabStops(game.cells())).toEqual([game.cells()[0]]);
+
+    game.choose('7x7');
+
+    expect(game.cells()).toHaveLength(49);
+    expect(tabStops(game.cells())).toHaveLength(1);
+  });
+
+  it('moves focus between cells with the arrow keys and stops at the edges', () => {
+    const game = renderGame();
+    const cells = game.cells();
+    cells[0].focus();
+
+    key(cells[0], 'ArrowUp');
+    key(cells[0], 'ArrowLeft');
+    expect(document.activeElement).toBe(cells[0]);
+
+    key(cells[0], 'ArrowRight');
+    expect(document.activeElement).toBe(cells[1]);
+    key(cells[1], 'ArrowDown');
+    expect(document.activeElement).toBe(cells[4]);
+    key(cells[4], 'ArrowDown');
+    key(cells[7], 'ArrowDown');
+    expect(document.activeElement).toBe(cells[7]);
+    key(cells[7], 'ArrowRight');
+    key(cells[8], 'ArrowRight');
+    expect(document.activeElement).toBe(cells[8]);
+
+    expect(tabStops(game.cells())).toEqual([cells[8]]);
+  });
+
+  it('keeps focus on the cell that was just played', () => {
+    const game = renderGame();
+    const cells = game.cells();
+    cells[0].focus();
+    key(cells[0], 'ArrowRight');
+    key(cells[1], 'ArrowDown');
+
+    fireEvent.click(cells[4]);
+
+    expect(game.marks()).toBe('....X....');
+    expect(document.activeElement).toBe(cells[4]);
+    expect(tabStops(game.cells())).toEqual([cells[4]]);
+  });
+
+  it('lets occupied cells be focused but not played again', () => {
+    const game = renderGame();
+    game.play(0);
+    const cells = game.cells();
+    cells[1].focus();
+
+    key(cells[1], 'ArrowLeft');
+    fireEvent.click(cells[0]);
+
+    expect(document.activeElement).toBe(cells[0]);
+    expect(cells[0].getAttribute('aria-disabled')).toBe('true');
+    expect(game.marks()).toBe('X........');
+  });
+
+  it('leaves arrow keys pressed with a modifier to the browser', () => {
+    const game = renderGame();
+    const cells = game.cells();
+    cells[0].focus();
+
+    fireEvent.keyDown(cells[0], { key: 'ArrowRight', altKey: true });
+
+    expect(document.activeElement).toBe(cells[0]);
   });
 });

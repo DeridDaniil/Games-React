@@ -1,125 +1,241 @@
-$glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
-$glass-border: 1px solid rgba(255, 255, 255, 0.1);
-$accent-color: #00796b;
-$radius-lg: 20px;
-$radius-md: 12px;
+@use '../../../../shared/styles/breakpoints' as bp;
 
+// Sign-in page: what the app is on the left, the form on a charcoal sheet on the right. On narrow
+// screens it is one column, with the form straight after the title and the games list last.
+// Everything hangs from the top, so the sheet only grows downwards when Register adds a field and
+// the tabs stay under the pointer.
 .profile-create {
-  width: 100%;
-  height: 100vh;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(var(--space-7), 12vh, 144px) var(--page-pad-x) var(--space-7);
+
+  @include bp.below(bp.$small) {
+    padding: var(--space-6) var(--space-5) var(--space-7);
+  }
+
+  @include bp.below(bp.$phone) {
+    padding: var(--space-5) var(--space-4) var(--space-6);
+  }
+}
+
+// A taller sheet adds its extra height to the flexible second row, so the intro and the games list
+// keep their places.
+.profile-create__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'intro panel'
+    'games panel';
+  column-gap: clamp(var(--space-7), 8vw, 112px);
+  row-gap: var(--space-6);
+  width: min(100%, 1000px);
+
+  @include bp.below(bp.$small) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      'intro'
+      'panel'
+      'games';
+    row-gap: var(--space-5);
+    width: min(100%, 440px);
+  }
+}
+
+// ── Intro ──
+
+.profile-create__intro {
+  grid-area: intro;
+}
+
+.profile-create__brand {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-6);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.01em;
 
-  &__card {
-    background: $glass-bg;
-    background-color: rgba(30, 30, 46, 0.85);
-    border: $glass-border;
-    border-radius: $radius-lg;
-    padding: 40px;
-    width: 100%;
-    max-width: 400px;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  @include bp.below(bp.$small) {
+    margin-bottom: var(--space-5);
+  }
+}
 
-    h1 {
-      margin: 0 0 4px;
-      font-size: 28px;
-      text-align: center;
-    }
+.profile-create__mark {
+  flex-shrink: 0;
+  color: var(--color-accent);
+}
+
+.profile-create__mark-warm {
+  fill: var(--color-warm);
+}
+
+.profile-create__title {
+  max-width: 12ch;
+  margin: 0;
+  font-size: 2.5rem;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+
+  @include bp.below(bp.$large) {
+    font-size: 2.25rem;
   }
 
-  &__subtitle {
-    text-align: center;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 14px;
-    margin: 0 0 30px;
+  @include bp.below(bp.$small) {
+    max-width: none;
+    font-size: var(--text-2xl);
   }
 
-  &__field {
-    margin-bottom: 20px;
+  @include bp.below(bp.$phone) {
+    font-size: var(--text-xl);
+  }
+}
 
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.7);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
+.profile-create__lead {
+  max-width: 40ch;
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
 
-    input {
-      width: 100%;
-      padding: 12px 16px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: $radius-md;
-      color: white;
-      font-size: 16px;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s, background 0.2s;
-      box-sizing: border-box;
+  @include bp.below(bp.$phone) {
+    margin-top: var(--space-3);
+    font-size: var(--text-base);
+  }
+}
 
-      &::placeholder {
-        color: rgba(255, 255, 255, 0.3);
-      }
+// ── The three games, as a quiet list between hairlines ──
 
-      &:focus {
-        border-color: $accent-color;
-        background: rgba(255, 255, 255, 0.08);
-      }
-    }
+.profile-create__games {
+  grid-area: games;
+  align-self: start;
+  max-width: 440px;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--color-border);
+  list-style: none;
+}
+
+.profile-create__game {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.profile-create__game-icon {
+  grid-row: span 2;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: var(--color-text-muted);
+}
+
+.profile-create__game-name {
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+}
+
+.profile-create__game-note {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+// ── Form sheet ──
+
+.profile-create__panel {
+  grid-area: panel;
+  align-self: start;
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+
+  @include bp.below(bp.$phone) {
+    padding: var(--space-5) var(--space-4);
+  }
+}
+
+// The two modes as a segmented control: a recessed track, the current mode on a translucent sage tile
+// with a thin sage edge, so the choice does not rest on a faint fill alone (WCAG 1.4.11).
+.profile-create__tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-5);
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-elevated);
+}
+
+.profile-create__tab {
+  flex: 1;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+
+  &:hover {
+    background-color: var(--color-surface);
+    color: var(--color-text);
   }
 
-  &__error {
-    color: #e74c3c;
-    font-size: 13px;
-    margin: 0 0 16px;
-    text-align: center;
+  &[aria-selected='true'] {
+    background-color: color-mix(in srgb, var(--color-accent) 24%, var(--color-bg-elevated));
+    box-shadow: inset 0 0 0 1px var(--color-accent);
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
   }
+}
 
-  &__submit {
-    width: 100%;
-    padding: 14px;
-    margin-top: 4px;
-    background: $accent-color;
-    border: none;
-    border-radius: $radius-md;
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background 0.2s;
+.profile-create__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
 
-    &:hover {
-      background: #00695c;
-    }
-  }
+.profile-create__error {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-warm-soft);
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
 
-  &__switch {
-    text-align: center;
-    color: rgba(255, 255, 255, 0.45);
-    font-size: 13px;
-    margin: 20px 0 0;
+.profile-create__submit {
+  width: 100%;
+  min-height: 44px;
+  margin-top: var(--space-1);
+}
 
-    button {
-      background: none;
-      border: none;
-      color: $accent-color;
-      font-size: 13px;
-      font-family: inherit;
-      font-weight: 600;
-      cursor: pointer;
-      padding: 0;
-      text-decoration: underline;
+.profile-create__note {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-5) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 
-      &:hover {
-        color: #26a69a;
-      }
-    }
+  svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
   }
 }

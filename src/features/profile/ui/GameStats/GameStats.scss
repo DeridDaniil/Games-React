@@ -1,0 +1,97 @@
+@use '../../../../shared/styles/breakpoints' as bp;
+
+// Rows between hairlines, no cards: the name and counts on the left, the win rate on the right,
+// a thin sage bar for that rate under both, and the reset at the far end.
+.game-stats {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-stats__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'name rate reset'
+    'counts rate reset'
+    'bar bar .';
+  align-items: center;
+  column-gap: var(--space-5);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--color-border);
+
+  &:last-child {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  @include bp.below(bp.$phone) {
+    column-gap: var(--space-3);
+  }
+}
+
+.game-stats__name {
+  grid-area: name;
+  margin: 0;
+  font-size: var(--text-md);
+}
+
+.game-stats__counts {
+  grid-area: counts;
+  margin: 2px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.game-stats__count {
+  white-space: nowrap;
+}
+
+.game-stats__rate {
+  display: flex;
+  grid-area: rate;
+  flex-direction: column;
+  align-items: flex-end;
+  margin: 0;
+}
+
+.game-stats__rate-value {
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.game-stats__rate-label {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.game-stats__bar {
+  display: block;
+  grid-area: bar;
+  height: 4px;
+  margin-top: var(--space-3);
+  overflow: hidden;
+  border-radius: 2px;
+  background-color: var(--color-surface-raised);
+}
+
+.game-stats__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--color-accent);
+}
+
+.game-stats__reset {
+  grid-area: reset;
+}
+
+.game-stats__dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}

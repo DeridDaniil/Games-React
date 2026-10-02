@@ -1,3 +1,18 @@
+// Drag data written by Checker.onDragStart: "<y>, <x>, <colour>-<checker|queen>".
+const DRAG_DATA = /^([0-7]), ([0-7]), ((?:white|black)-(?:checker|queen))$/;
+
+// The dragged checker if the drag data describes a checker of the side to move that still stands
+// on that square; null for anything else dropped on the board (other text, stale or spoofed data).
+export const readDraggedChecker = (data, position, turn) => {
+  const match = DRAG_DATA.exec(data ?? '');
+  if (!match) return null;
+  const [, axisY, axisX, checker] = match;
+  const y = Number(axisY);
+  const x = Number(axisX);
+  if (position[y][x] !== checker || checker.slice(0, 5) !== turn) return null;
+  return { axisY: y, axisX: x, checker };
+};
+
 export const createPosition = () => {
   const position = Array(8).fill('').map(() => Array(8).fill(''));
 

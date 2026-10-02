@@ -164,15 +164,25 @@ describe('arbiter.isStalemate', () => {
     expect(arbiter.isStalemate(createPosition(), 'white', 'both')).toBe(false);
   });
 
-  // KNOWN BUG (not fixed in this stage): isStalemate/isCheckmate never receive the previous
-  // position, so en passant is invisible to them and a position whose only legal move is
-  // an en passant capture is reported as stalemate.
-  it('ignores en passant replies (current behaviour, known bug)', () => {
+  it('counts an en passant capture as a legal move when given the position before the last move', () => {
     const before = boardWith({ a1: 'white-king', e5: 'white-pawn', b3: 'black-queen', e6: 'black-knight', h8: 'black-king', d7: 'black-pawn' });
     const after = boardWith({ a1: 'white-king', e5: 'white-pawn', b3: 'black-queen', e6: 'black-knight', h8: 'black-king', d5: 'black-pawn' });
 
     expect(validMoves(after, 'e5', { prevPosition: before })).toEqual(['d6']);
-    expect(arbiter.isStalemate(after, 'white', 'none')).toBe(true);
+    expect(arbiter.isStalemate(after, 'white', 'none', before)).toBe(false);
+  });
+});
+
+describe('arbiter.isCheckmate with en passant', () => {
+  // d7-d5 checks the king on e4; every other escape is covered and d5 is protected by c6.
+  const before = boardWith({ e4: 'white-king', e5: 'white-pawn', d7: 'black-pawn', c6: 'black-pawn', f8: 'black-rook', a3: 'black-rook', b5: 'black-knight', h8: 'black-king' });
+  const after = boardWith({ e4: 'white-king', e5: 'white-pawn', d5: 'black-pawn', c6: 'black-pawn', f8: 'black-rook', a3: 'black-rook', b5: 'black-knight', h8: 'black-king' });
+
+  it('is false when capturing the checking pawn en passant is the way out', () => {
+    expect(arbiter.isPlayerInCheck({ positionAfterMove: after, player: 'white' })).toBe(true);
+    expect(validMoves(after, 'e4', { prevPosition: before })).toEqual([]);
+    expect(validMoves(after, 'e5', { prevPosition: before })).toEqual(['d6']);
+    expect(arbiter.isCheckmate(after, 'white', 'none', before)).toBe(false);
   });
 });
 

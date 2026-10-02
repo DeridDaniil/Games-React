@@ -39,6 +39,25 @@ export const findFiguresCoords = (position, type) => {
   return result;
 }
 
+// Drag data written by Figure.onDragStart: "<colour>-<piece>, <y>, <x>".
+const DRAG_DATA = /^((?:white|black)-(?:pawn|knight|bishop|rook|queen|king)), ([0-7]), ([0-7])$/;
+
+// The dragged piece if the drag data describes a piece of the side to move standing on that
+// square; null for anything else dropped on the board (other text, stale or spoofed data).
+export const readDraggedFigure = (data, position, turn) => {
+  const match = DRAG_DATA.exec(data ?? '');
+  if (!match) return null;
+  const [, figure, axisY, axisX] = match;
+  const y = Number(axisY);
+  const x = Number(axisX);
+  if (position[y][x] !== figure || figure.slice(0, 5) !== turn) return null;
+  return { figure, axisY: y, axisX: x };
+}
+
+export const PIECE_LETTERS = { king: 'K', queen: 'Q', rook: 'R', bishop: 'B', knight: 'N' };
+
+// Simplified algebraic notation of a move, read from the position before it: "e4", "exd5", "Nf3",
+// "Rxa7", "0-0", "0-0-0", "e8=Q". `promotesTo` is the name of the piece a pawn becomes.
 export const getNewMoveNotation = ({ position, figure, axisY, axisX, y, x, promotesTo }) => {
   let note = '';
 
@@ -46,12 +65,11 @@ export const getNewMoveNotation = ({ position, figure, axisY, axisX, y, x, promo
   axisX = Number(axisX);
 
   if (figure.slice(6) === 'king' && Math.abs(axisX - x) === 2) {
-    if (axisX > x) return '0-0';
-    else return '0-0-0';
+    return x > axisX ? '0-0' : '0-0-0';
   }
 
   if (figure.slice(6) !== 'pawn') {
-    note += figure.slice(6, 7).toUpperCase();
+    note += PIECE_LETTERS[figure.slice(6)];
     if (position[y][x]) {
       note += 'x';
     }
@@ -61,7 +79,7 @@ export const getNewMoveNotation = ({ position, figure, axisY, axisX, y, x, promo
 
   note += String.fromCharCode(x + 97) + (y + 1);
 
-  if (promotesTo) note += '=' + promotesTo.toUpperCase();
+  if (promotesTo) note += '=' + PIECE_LETTERS[promotesTo];
 
   return note;
 }

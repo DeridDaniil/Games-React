@@ -1,0 +1,32 @@
+// Minimal reset: a predictable box model and form controls that use the page font.
+// Element spacing is left to the components on purpose.
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}

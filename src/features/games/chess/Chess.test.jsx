@@ -2,11 +2,23 @@
 // Whole-game flows through the real components and reducer, driven the way a browser drives
 // HTML5 drag and drop. Assertions are about what the player sees, not about internal actions.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, createEvent, fireEvent, render, screen } from '@testing-library/react';
+import { act, createEvent, fireEvent, render, screen, within } from '@testing-library/react';
 import Chess from './Chess';
 import { ProfileProvider } from '../../profile/model/ProfileContext';
 import { loadSession, register } from '../../profile/lib/profileStorage';
-import { sq } from '../shared/test/boardTestUtils';
+import { boardWith, sq } from '../shared/test/boardTestUtils';
+
+// Lets a test start the game from a chosen position; null keeps the real initial state.
+const start = vi.hoisted(() => ({ state: null }));
+vi.mock('./model/constant', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, get initChessGame() { return start.state ?? actual.initChessGame; } };
+});
+const { initChessGame } = await vi.importActual('./model/constant');
+
+const startFrom = (pieces, turn = 'white') => {
+  start.state = { ...initChessGame, position: [boardWith(pieces)], turn, castleDirection: { white: 'none', black: 'none' } };
+};
 
 const BOARD_PX = 800;
 const CELL_PX = BOARD_PX / 8;
@@ -56,7 +68,7 @@ const renderChess = () => {
 
   const move = (from, target) => dropOn(pickUp(from), target);
   const play = (...moves) => moves.forEach(([from, target]) => move(from, target));
-  const movesList = () => [...container.querySelector('.game-move-history').children].map(row => row.textContent);
+  const movesList = () => [...container.querySelectorAll('.game-move-history__move')].map(move => move.textContent);
   const choosePromotion = (figure) => fireEvent.click(container.querySelector(`.popup .${figure}`));
 
   return { container, pieceOn, pickUp, dropOn, move, play, movesList, choosePromotion };
@@ -76,6 +88,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   localStorage.clear();
+  start.state = null;
 });
 
 describe('Chess (whole game)', () => {
@@ -122,6 +135,14 @@ describe('Chess (whole game)', () => {
     expect(game.movesList().at(-1)).toBe('exd6');
   });
 
+  it('writes 1. e4 e5 2. Nf3 with N for the knight', () => {
+    const game = renderChess();
+
+    game.play(['e2', 'e4'], ['e7', 'e5'], ['g1', 'f3']);
+
+    expect(game.movesList()).toEqual(['e4', 'e5', 'Nf3']);
+  });
+
   it('castles kingside, moving the king and the rook together', () => {
     const game = renderChess();
 
@@ -131,6 +152,52 @@ describe('Chess (whole game)', () => {
     expect(game.pieceOn('f1')).toBe('white-rook');
     expect(game.pieceOn('h1')).toBeNull();
     expect(game.pieceOn('e1')).toBeNull();
+    expect(game.movesList().at(-1)).toBe('0-0');
+  });
+
+  const queensideReady = [['d2', 'd4'], ['d7', 'd5'], ['b1', 'c3'], ['b8', 'c6'], ['c1', 'f4'], ['c8', 'f5'], ['d1', 'd2'], ['d8', 'd7']];
+
+  it('castles queenside and writes it as 0-0-0', () => {
+    const game = renderChess();
+
+    game.play(...queensideReady, ['e1', 'c1']);
+
+    expect(game.pieceOn('c1')).toBe('white-king');
+    expect(game.pieceOn('d1')).toBe('white-rook');
+    expect(game.pieceOn('a1')).toBeNull();
+    expect(game.movesList().at(-1)).toBe('0-0-0');
+  });
+
+  it('gives queenside castling back when the rook move that lost it is taken back', () => {
+    const game = renderChess();
+    game.play(...queensideReady, ['a1', 'b1']);
+
+    fireEvent.click(screen.getByText('Take Back'));
+    game.move('e1', 'c1');
+
+    expect(game.pieceOn('c1')).toBe('white-king');
+    expect(game.pieceOn('d1')).toBe('white-rook');
+  });
+
+  it('does not let a rook that went back to its corner castle again', () => {
+    const game = renderChess();
+    game.play(...queensideReady, ['a1', 'b1'], ['a7', 'a6'], ['b1', 'a1'], ['a6', 'a5']);
+
+    game.move('e1', 'c1');
+
+    expect(game.pieceOn('e1')).toBe('white-king');
+    expect(game.pieceOn('c1')).toBeNull();
+  });
+
+  it('gives both castling sides back when a king move is taken back', () => {
+    const game = renderChess();
+    game.play(['e2', 'e4'], ['e7', 'e5'], ['g1', 'f3'], ['b8', 'c6'], ['f1', 'c4'], ['f8', 'c5'], ['e1', 'e2']);
+
+    fireEvent.click(screen.getByText('Take Back'));
+    game.move('e1', 'g1');
+
+    expect(game.pieceOn('g1')).toBe('white-king');
+    expect(game.pieceOn('f1')).toBe('white-rook');
   });
 
   it("ends the game after fool's mate, highlights the check and records the loss", () => {
@@ -139,7 +206,23 @@ describe('Chess (whole game)', () => {
     game.play(['f2', 'f3'], ['e7', 'e5'], ['g2', 'g4'], ['d8', 'h4']);
 
     expect(screen.getByRole('heading', { name: 'Black wins' })).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Black wins');
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'New Game' }));
     expect(game.container.querySelectorAll('.cell.checked')).toHaveLength(1);
+    expect(chessStats()).toEqual({ wins: 0, losses: 1, draws: 0 });
+  });
+
+  it('resumes a finished game on Take Back and still records that game only once', () => {
+    const game = renderChess();
+    game.play(['f2', 'f3'], ['e7', 'e5'], ['g2', 'g4'], ['d8', 'h4']);
+    expect(chessStats()).toEqual({ wins: 0, losses: 1, draws: 0 });
+
+    fireEvent.click(screen.getByText('Take Back'));
+    expect(document.querySelector('.game_ends')).toBeNull();
+
+    game.move('d8', 'h4');
+
+    expect(screen.getByRole('heading', { name: 'Black wins' })).toBeTruthy();
     expect(chessStats()).toEqual({ wins: 0, losses: 1, draws: 0 });
   });
 
@@ -158,8 +241,28 @@ describe('Chess (whole game)', () => {
     expect(game.pieceOn('b7')).toBeNull();
     expect(game.pieceOn('h1')).toBe('black-knight');
     expect(game.pieceOn('g2')).toBeNull();
-    // Promotion suffixes are a known notation quirk (see PromotionBox tests).
-    expect(game.movesList().slice(-2)).toEqual(['bxa8=WQ', 'gxh1=BKN']);
+    expect(game.movesList().slice(-2)).toEqual(['bxa8=Q', 'gxh1=N']);
+  });
+
+  it('Take Back while the promotion choice is open only cancels the choice', () => {
+    const game = renderChess();
+    game.play(['a2', 'a4'], ['h7', 'h5'], ['a4', 'a5'], ['h5', 'h4'], ['a5', 'a6'], ['h4', 'h3'], ['a6', 'b7'], ['h3', 'g2']);
+    const movesBefore = game.movesList();
+
+    game.move('b7', 'a8');
+    expect(game.container.querySelector('.promotion-choise')).not.toBeNull();
+
+    fireEvent.click(screen.getByText('Take Back'));
+
+    expect(game.container.querySelector('.promotion-choise')).toBeNull();
+    expect(game.pieceOn('b7')).toBe('white-pawn');
+    expect(game.pieceOn('g2')).toBe('black-pawn');
+    expect(game.movesList()).toEqual(movesBefore);
+
+    // White is still to move and can promote after all.
+    game.move('b7', 'a8');
+    game.choosePromotion('white-queen');
+    expect(game.pieceOn('a8')).toBe('white-queen');
   });
 
   it('starts the clock when White picks up a piece and runs only the clock of the side to move', () => {
@@ -193,7 +296,7 @@ describe('Chess (whole game)', () => {
     game.move('e2', 'e4');
 
     fireEvent.click(screen.getByText('Surrender'));
-    const confirm = screen.getByRole('button', { name: 'Surrender' });
+    const confirm = within(screen.getByRole('dialog')).getByRole('button', { name: 'Surrender' });
     expect(confirm.disabled).toBe(true);
     advance(2000);
     fireEvent.click(confirm);
@@ -205,14 +308,14 @@ describe('Chess (whole game)', () => {
     expect(chessStats()).toEqual({ wins: 0, losses: 0, draws: 0 });
   });
 
-  it('opens the surrender dialog right after its tile, inside the actions row', () => {
+  it('asks for the surrender in a modal dialog with the chess message', () => {
     renderChess();
 
     fireEvent.click(screen.getByText('Surrender'));
 
-    const tile = screen.getByText('Surrender', { selector: '.game-action span' }).parentElement;
-    expect(tile.parentElement.classList.contains('game-control-panel__actions')).toBe(true);
-    expect(tile.nextElementSibling.classList.contains('game-surrender-dialog')).toBe(true);
+    const dialog = screen.getByRole('dialog', { name: 'Confirm Surrender' });
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(within(dialog).getByText(/start a new one from the initial position/)).toBeTruthy();
   });
 
   it('keeps the game when the surrender is cancelled', () => {
@@ -238,5 +341,83 @@ describe('Chess (whole game)', () => {
     expect(game.pieceOn('e7')).toBe('black-pawn');
     expect(game.pieceOn('e4')).toBe('white-pawn');
     expect(game.movesList()).toEqual(['e4']);
+  });
+});
+
+describe('Chess endings from chosen positions', () => {
+  const resultOverlay = () => document.querySelector('.game_ends');
+
+  it('ends the game when a promotion checkmates and records the win', () => {
+    startFrom({ b6: 'white-king', c7: 'white-pawn', a8: 'black-king' });
+    const game = renderChess();
+
+    game.move('c7', 'c8');
+    game.choosePromotion('white-queen');
+
+    expect(screen.getByRole('heading', { name: 'White wins' })).toBeTruthy();
+    expect(game.movesList()).toEqual(['c8=Q']);
+    expect(chessStats()).toEqual({ wins: 1, losses: 0, draws: 0 });
+  });
+
+  it('puts the game back in play when the mating promotion is taken back', () => {
+    startFrom({ b6: 'white-king', c7: 'white-pawn', a8: 'black-king' });
+    const game = renderChess();
+    game.move('c7', 'c8');
+    game.choosePromotion('white-rook');
+
+    fireEvent.click(screen.getByText('Take Back'));
+
+    expect(resultOverlay()).toBeNull();
+    expect(game.pieceOn('c7')).toBe('white-pawn');
+    expect(game.movesList()).toEqual([]);
+  });
+
+  it('ends the game in a draw when a promotion stalemates', () => {
+    startFrom({ c1: 'white-king', g7: 'white-pawn', a1: 'black-king' });
+    const game = renderChess();
+
+    game.move('g7', 'g8');
+    game.choosePromotion('white-queen');
+
+    expect(screen.getByRole('heading', { name: 'Draw' })).toBeTruthy();
+    expect(screen.getByText('Game draws due to stalemate')).toBeTruthy();
+    expect(chessStats()).toEqual({ wins: 0, losses: 0, draws: 1 });
+  });
+
+  it('ends the game in a draw when an under-promotion leaves insufficient material', () => {
+    startFrom({ b6: 'white-king', c7: 'white-pawn', a8: 'black-king' });
+    const game = renderChess();
+
+    game.move('c7', 'c8');
+    game.choosePromotion('white-knight');
+
+    expect(screen.getByText('Game draws due to insufficient material')).toBeTruthy();
+    expect(game.movesList()).toEqual(['c8=N']);
+  });
+
+  it('keeps playing when the only reply is an en passant capture', () => {
+    startFrom({ a1: 'white-king', e5: 'white-pawn', b3: 'black-queen', e6: 'black-knight', h8: 'black-king', d7: 'black-pawn' }, 'black');
+    const game = renderChess();
+
+    game.move('d7', 'd5');
+    expect(resultOverlay()).toBeNull();
+
+    game.move('e5', 'd6');
+    expect(game.pieceOn('d6')).toBe('white-pawn');
+    expect(game.pieceOn('d5')).toBeNull();
+    expect(game.movesList()).toEqual(['d5', 'exd6']);
+  });
+
+  it('is no checkmate when an en passant capture removes the checking pawn', () => {
+    startFrom({ e4: 'white-king', e5: 'white-pawn', d7: 'black-pawn', c6: 'black-pawn', f8: 'black-rook', a3: 'black-rook', b5: 'black-knight', h8: 'black-king' }, 'black');
+    const game = renderChess();
+
+    game.move('d7', 'd5');
+    expect(resultOverlay()).toBeNull();
+    expect(game.container.querySelectorAll('.cell.checked')).toHaveLength(1);
+
+    game.move('e5', 'd6');
+    expect(game.pieceOn('d6')).toBe('white-pawn');
+    expect(game.container.querySelectorAll('.cell.checked')).toHaveLength(0);
   });
 });

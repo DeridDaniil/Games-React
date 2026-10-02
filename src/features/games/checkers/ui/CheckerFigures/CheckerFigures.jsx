@@ -3,6 +3,7 @@ import Checker from '../Checker/Checker';
 import { useCheckersContext } from '../../model/Context';
 import { clearCandidates, makeNewMove, continueCapture, startClock } from '../../model/actions/move';
 import arbiter from '../../lib/arbiter/arbiter';
+import { readDraggedChecker } from '../../lib/helper';
 import './CheckerFigures.scss';
 
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -28,9 +29,17 @@ function CheckerFigures() {
 
   const onDrop = e => {
     e.preventDefault();
+    // Highlights can outlive a drag that ended off the board, so whatever is dropped must name a
+    // checker of the side to move that still stands on its square before anything is read from it.
+    const dragged = readDraggedChecker(e.dataTransfer.getData('text'), position, checkersState.turn);
+    if (!dragged) {
+      dispatch(clearCandidates());
+      return;
+    }
+
+    const { axisY, axisX, checker } = dragged;
     const newPosition = position.map(axisY => axisY.map(axisX => axisX));
     const { y, x } = calculateCoords(e);
-    const [axisY, axisX, checker] = e.dataTransfer.getData('text').split(', ');
     const player = checker.slice(0, 5)
 
     if (checkersState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
@@ -54,7 +63,7 @@ function CheckerFigures() {
         });
       }
 
-      const newMove = getMoveNotation(Number(axisY), Number(axisX), y, x, wasCapture);
+      const newMove = getMoveNotation(axisY, axisX, y, x, wasCapture);
 
       if (!checkersState.clockStarted) {
         dispatch(startClock());

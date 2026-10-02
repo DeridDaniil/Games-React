@@ -1,13 +1,6 @@
 import { ActionTypes } from "../types"
 import { initChessGame } from "../constant"
 
-export const updateCastling = (direction) => {
-  return {
-    type: ActionTypes.CAN_CASTLE,
-    payload: direction
-  }
-}
-
 export const detectStalemate = () => {
   return {
     type: ActionTypes.STALEMATE,
@@ -24,6 +17,12 @@ export const detectCheckmate = (winner) => {
   return {
     type: ActionTypes.WIN,
     payload: winner
+  }
+}
+
+export const markResultRecorded = () => {
+  return {
+    type: ActionTypes.RESULT_RECORDED
   }
 }
 

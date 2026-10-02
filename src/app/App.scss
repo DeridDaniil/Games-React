@@ -1,4 +1,43 @@
+@use '../shared/styles/breakpoints' as bp;
+
+// Application shell: the navigation rail on the left and the page next to it. On small screens
+// the navigation becomes a bar at the bottom and the page keeps clear of it.
 .app {
-  width: 100%;
-  height: 100vh;
+  display: grid;
+  grid-template-columns: var(--app-nav-width) minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  @include bp.below(bp.$large) {
+    --page-pad-x: 28px;
+    --page-pad-y: 24px;
+  }
+
+  @include bp.below(bp.$small) {
+    --page-pad-x: 20px;
+
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @include bp.below(bp.$phone) {
+    --page-pad-x: 12px;
+    --page-pad-y: 16px;
+  }
+}
+
+// Keyboard focus and scrollIntoView stop above the bottom navigation instead of behind it.
+:root {
+  @include bp.below(bp.$small) {
+    scroll-padding-bottom: calc(var(--app-nav-height) + env(safe-area-inset-bottom));
+  }
+}
+
+// Pages size their content against this container, so a scrollbar never pushes them sideways.
+.app__main {
+  min-width: 0;
+  container-type: inline-size;
+
+  @include bp.below(bp.$small) {
+    padding-bottom: calc(var(--app-nav-height) + env(safe-area-inset-bottom));
+  }
 }

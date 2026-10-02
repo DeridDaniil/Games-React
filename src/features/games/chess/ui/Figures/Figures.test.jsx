@@ -42,10 +42,11 @@ const pickUp = ({ position, from, turn = 'white', castleDirection = fullCastling
   const layer = container.querySelector('.figures');
   layer.getBoundingClientRect = () => ({ width: BOARD_PX, height: BOARD_PX, top: 0, left: 0, right: BOARD_PX, bottom: BOARD_PX });
 
-  // Returns whether the drop event was left uncancelled (fireEvent's return value).
-  const dropOn = (target) => {
+  // Returns whether the drop event was left uncancelled (fireEvent's return value). `data` replaces
+  // the drag data of the picked-up piece, e.g. with text dragged in from elsewhere.
+  const dropOn = (target, data = `${figure}, ${axisY}, ${axisX}`) => {
     const [y, x] = sq(target);
-    const event = createEvent.drop(layer, { dataTransfer: { getData: () => `${figure}, ${axisY}, ${axisX}` } });
+    const event = createEvent.drop(layer, { dataTransfer: { getData: () => data } });
     Object.defineProperty(event, 'clientX', { value: x * CELL_PX + CELL_PX / 2 });
     Object.defineProperty(event, 'clientY', { value: (7 - y) * CELL_PX + CELL_PX / 2 });
     return fireEvent(layer, event);
@@ -98,16 +99,15 @@ describe('Chess Figures drop handling', () => {
     expect(payloadOf(ActionTypes.PROMOTION_OPEN)).toEqual({ axisY: 1, axisX: 7, y: 0, x: 7 });
   });
 
-  it('updates castling rights before recording a rook move', () => {
+  // Castling rights follow from the new position in the reducer, so a rook move is just a move.
+  it('records a rook move without any separate castling action', () => {
     const position = boardWith({ e1: 'white-king', a1: 'white-rook', h1: 'white-rook', e8: 'black-king' });
-    const { dropOn, types, orderedTypes, payloadOf } = pickUp({ position, from: 'h1' });
+    const { dropOn, types, payloadOf } = pickUp({ position, from: 'h1' });
 
     dropOn('g1');
 
-    expect(types()).toEqual(sorted(ActionTypes.CAN_CASTLE, ActionTypes.NEW_MOVE, ActionTypes.CLEAR_CANDIDATE_MOVES));
-    // The reducer applies CAN_CASTLE to `state.turn`, so it must run while the mover is still to move.
-    expect(orderedTypes().indexOf(ActionTypes.CAN_CASTLE)).toBeLessThan(orderedTypes().indexOf(ActionTypes.NEW_MOVE));
-    expect(payloadOf(ActionTypes.CAN_CASTLE)).toBe('left');
+    expect(types()).toEqual(sorted(ActionTypes.NEW_MOVE, ActionTypes.CLEAR_CANDIDATE_MOVES));
+    expect(payloadOf(ActionTypes.NEW_MOVE).newMove).toBe('Rg1');
   });
 
   it('moves the rook as well when the king castles', () => {
@@ -116,8 +116,8 @@ describe('Chess Figures drop handling', () => {
 
     dropOn('g1');
 
-    expect(payloadOf(ActionTypes.CAN_CASTLE)).toBe('none');
-    const { newPosition } = payloadOf(ActionTypes.NEW_MOVE);
+    const { newPosition, newMove } = payloadOf(ActionTypes.NEW_MOVE);
+    expect(newMove).toBe('0-0');
     expect(pieceAt(newPosition, 'g1')).toBe('white-king');
     expect(pieceAt(newPosition, 'f1')).toBe('white-rook');
   });
@@ -149,7 +149,6 @@ describe('Chess Figures drop handling', () => {
     dropOn('e2');
 
     expect(types()).toEqual(sorted(
-      ActionTypes.CAN_CASTLE,
       ActionTypes.NEW_MOVE,
       ActionTypes.INSUFFICIENT_MATERIAL,
       ActionTypes.CLEAR_CANDIDATE_MOVES
@@ -160,6 +159,29 @@ describe('Chess Figures drop handling', () => {
     const { dropOn, types } = pickUp({ position: createPosition(), from: 'e2' });
 
     expect(dropOn('e5')).toBe(false);
+
+    expect(types()).toEqual([ActionTypes.CLEAR_CANDIDATE_MOVES]);
+  });
+
+  // Highlights stay after a drag that ended off the board; the next drop must not reuse them.
+  it("refuses an opponent's piece dropped on a square still highlighted for the mover", () => {
+    const { dropOn, types } = pickUp({ position: createPosition(), from: 'e2' });
+
+    expect(() => dropOn('e4', 'black-pawn, 6, 3')).not.toThrow();
+
+    expect(types()).toEqual([ActionTypes.CLEAR_CANDIDATE_MOVES]);
+  });
+
+  it.each([
+    ['nothing', ''],
+    ['arbitrary text', 'e4'],
+    ['coordinates off the board', 'white-pawn, 9, 4'],
+    ['an unknown piece', 'white-dragon, 1, 4'],
+    ['a piece that is not on that square', 'white-queen, 1, 4']
+  ])('ignores dropped drag data with %s', (_case, data) => {
+    const { dropOn, types } = pickUp({ position: createPosition(), from: 'e2' });
+
+    expect(() => dropOn('e4', data)).not.toThrow();
 
     expect(types()).toEqual([ActionTypes.CLEAR_CANDIDATE_MOVES]);
   });

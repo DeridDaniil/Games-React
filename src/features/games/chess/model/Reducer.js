@@ -1,13 +1,15 @@
 import { ActionTypes, Status } from "./types";
+import { keepCastlingRights } from "../lib/arbiter/getMoves";
 
 export const ChessReducer = (state, action) => {
   switch (action.type) {
     case ActionTypes.NEW_MOVE: {
       let { turn, position, movesList, turnStartTimes, timeHistory } = state;
+      const { newPosition } = action.payload;
       turn = turn === 'white' ? 'black' : 'white';
       position = [
         ...position,
-        action.payload.newPosition
+        newPosition
       ];
       movesList = [
         ...movesList,
@@ -17,12 +19,18 @@ export const ChessReducer = (state, action) => {
         ...timeHistory,
         turnStartTimes
       ];
+      // Castling rights follow from the new position; the old ones are kept for Take Back.
       return {
         ...state,
         turn,
         position,
         movesList,
         timeHistory,
+        castleDirection: {
+          white: keepCastlingRights(state.castleDirection.white, newPosition, 'white'),
+          black: keepCastlingRights(state.castleDirection.black, newPosition, 'black')
+        },
+        castlingHistory: [...state.castlingHistory, state.castleDirection],
         turnStartTimes: { whiteTime: state.whiteTime, blackTime: state.blackTime }
       };
     }
@@ -54,16 +62,6 @@ export const ChessReducer = (state, action) => {
         ...state,
         status: Status.ongoing,
         promotionSquare: null
-      }
-    }
-
-    case ActionTypes.CAN_CASTLE: {
-      return {
-        ...state,
-        castleDirection: {
-          ...state.castleDirection,
-          [state.turn]: action.payload
-        }
       }
     }
 
@@ -109,7 +107,16 @@ export const ChessReducer = (state, action) => {
         ...state,
         whiteTime: loser === 'white' ? 0 : state.whiteTime,
         blackTime: loser === 'black' ? 0 : state.blackTime,
-        status: winner === 'white' ? Status.whiteOnTime : Status.blackOnTime
+        status: winner === 'white' ? Status.whiteOnTime : Status.blackOnTime,
+        promotionSquare: null,
+        candidateMoves: []
+      };
+    }
+
+    case ActionTypes.RESULT_RECORDED: {
+      return {
+        ...state,
+        resultRecorded: true
       };
     }
 
@@ -125,6 +132,7 @@ export const ChessReducer = (state, action) => {
       const activeKey = state.turn === 'white' ? 'whiteTime' : 'blackTime';
       const remaining = state[activeKey] - action.payload.delta;
 
+      // Running out of time also abandons a promotion that was still being chosen.
       if (remaining <= 0) {
         const loser = state.turn;
         const winner = loser === 'white' ? 'black' : 'white';
@@ -133,7 +141,9 @@ export const ChessReducer = (state, action) => {
           ...state,
           whiteTime: loser === 'white' ? 0 : state.whiteTime,
           blackTime: loser === 'black' ? 0 : state.blackTime,
-          status: winner === 'white' ? Status.whiteOnTime : Status.blackOnTime
+          status: winner === 'white' ? Status.whiteOnTime : Status.blackOnTime,
+          promotionSquare: null,
+          candidateMoves: []
         };
       }
 
@@ -144,7 +154,17 @@ export const ChessReducer = (state, action) => {
     }
 
     case ActionTypes.TAKE_BACK: {
-      let { position, movesList, turn, timeHistory } = state;
+      // A pawn waiting for its promotion has not moved yet, so only the pending choice is cancelled.
+      if (state.status === Status.promoting) {
+        return {
+          ...state,
+          status: Status.ongoing,
+          promotionSquare: null,
+          candidateMoves: []
+        };
+      }
+
+      let { position, movesList, turn, timeHistory, castlingHistory } = state;
       if (position.length > 1) {
         position = position.slice(0, position.length - 1);
         movesList = movesList.slice(0, movesList.length - 1);
@@ -152,24 +172,29 @@ export const ChessReducer = (state, action) => {
 
         const previousTurnStart = timeHistory[timeHistory.length - 1];
         timeHistory = timeHistory.slice(0, timeHistory.length - 1);
+        const previousCastling = castlingHistory[castlingHistory.length - 1];
+        castlingHistory = castlingHistory.slice(0, castlingHistory.length - 1);
 
+        // Moves are only played in an ongoing game, so undoing one, even the one that ended
+        // the game, always leaves an ongoing game (its result stays recorded, see resultRecorded).
+        // Back at the initial position the clock waits for White to pick up a piece again.
         return {
           ...state,
           position,
           movesList,
           turn,
           timeHistory,
+          castlingHistory,
+          castleDirection: previousCastling,
+          status: Status.ongoing,
+          candidateMoves: [],
+          clockStarted: position.length > 1,
           turnStartTimes: previousTurnStart,
           whiteTime: previousTurnStart.whiteTime,
           blackTime: previousTurnStart.blackTime
         }
       }
-      return {
-        ...state,
-        position,
-        movesList,
-        turn
-      }
+      return state;
     }
   }
 

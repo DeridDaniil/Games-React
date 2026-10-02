@@ -1,7 +1,9 @@
+// Overlay for the promotion choice and the result, covering the squares and dimming them.
 .popup {
   position: absolute;
-  top: 21px;
-  left: 21px;
-  width: 720px;
-  height: 720px;
+  top: calc(var(--board-frame-width) + 1px);
+  left: calc(var(--board-frame-width) + 1px);
+  width: calc(8 * var(--cell-size));
+  height: calc(8 * var(--cell-size));
+  background-color: var(--color-scrim-board);
 }

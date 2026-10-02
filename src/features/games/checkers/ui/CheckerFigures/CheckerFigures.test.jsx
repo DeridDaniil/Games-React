@@ -37,10 +37,11 @@ const pickUp = ({ position, from, turn = 'white', clockStarted = true }) => {
   const layer = container.querySelector('.checker-figures');
   layer.getBoundingClientRect = () => ({ width: BOARD_PX, height: BOARD_PX, top: 0, left: 0, right: BOARD_PX, bottom: BOARD_PX });
 
-  // Returns whether the drop event was left uncancelled (fireEvent's return value).
-  const dropOn = (target) => {
+  // Returns whether the drop event was left uncancelled (fireEvent's return value). `data` replaces
+  // the drag data of the picked-up checker, e.g. with text dragged in from elsewhere.
+  const dropOn = (target, data = `${axisY}, ${axisX}, ${checker}`) => {
     const [y, x] = sq(target);
-    const event = createEvent.drop(layer, { dataTransfer: { getData: () => `${axisY}, ${axisX}, ${checker}` } });
+    const event = createEvent.drop(layer, { dataTransfer: { getData: () => data } });
     Object.defineProperty(event, 'clientX', { value: x * CELL_PX + CELL_PX / 2 });
     Object.defineProperty(event, 'clientY', { value: (7 - y) * CELL_PX + CELL_PX / 2 });
     return fireEvent(layer, event);
@@ -164,6 +165,23 @@ describe('CheckerFigures drop handling', () => {
     const { dropOn, types } = pickUp({ position: createPosition(), from: 'c3' });
 
     expect(dropOn('e5')).toBe(false);
+
+    expect(types()).toEqual([ActionTypes.CLEAR_CANDIDATE]);
+  });
+
+  // Highlights stay after a drag that ended off the board; whatever is dropped next is checked
+  // before it is read, and only clears the highlights when it is not a checker of the side to move.
+  it.each([
+    ['nothing', ''],
+    ['arbitrary text', 'd4'],
+    ['coordinates off the board', '9, 2, white-checker'],
+    ['an unknown checker name', '2, 2, white-dragon'],
+    ['a checker that is no longer on its square', '3, 3, white-checker'],
+    ["a checker of the side that is not to move", '5, 1, black-checker']
+  ])('ignores dropped drag data with %s without throwing', (_case, data) => {
+    const { dropOn, types } = pickUp({ position: createPosition(), from: 'c3' });
+
+    expect(() => dropOn('d4', data)).not.toThrow();
 
     expect(types()).toEqual([ActionTypes.CLEAR_CANDIDATE]);
   });

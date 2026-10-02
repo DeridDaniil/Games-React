@@ -1,101 +1,96 @@
+// Same tabletop board as in chess: a dark wood frame around stone and grey squares sized by --cell-size.
+// It isolates its stacking so the squares (z-index -1) stay above its own frame.
 .checkersBoard {
   position: relative;
-  margin: 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0px 0px 25px 10px rgba(0, 0, 0, 0.25);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-  backdrop-filter: blur(10px);
+  isolation: isolate;
+  padding: var(--board-frame-width);
+  border: 1px solid var(--board-frame-edge);
+  border-radius: var(--radius-md);
+  background-color: var(--board-frame);
+  box-shadow: var(--shadow-board);
 
   .cells {
-    display: flex;
-    flex-wrap: wrap;
-    max-width: calc(8 * 90px);
-    max-height: calc(8 * 90px);
+    display: grid;
+    grid-template-columns: repeat(8, var(--cell-size));
+    grid-auto-rows: var(--cell-size);
+    overflow: hidden;
+    border-radius: 4px;
 
     .cell {
       position: relative;
       z-index: -1;
-      width: 90px;
-      height: 90px;
 
       &.white {
-        background-color: #ebecd0;
+        background-color: var(--board-light);
       }
 
       &.black {
-        background-color: #3b7478;
+        background-color: var(--board-dark);
       }
 
-      &.attacking::before {
-        content: "";
-        position: absolute;
-        top: 5%;
-        left: 5%;
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background-color: rgba(255, 0, 0, 0.8);
-        box-shadow: 0px 0px 10px 3px rgba(255, 0, 0, 0.8);
-      }
-
+      // Square the checker can move to.
       &.highlight::before {
-        content: "";
+        content: '';
         position: absolute;
-        top: 25%;
-        left: 25%;
-        width: 45px;
-        height: 45px;
+        inset: 0;
+        width: 26%;
+        height: 26%;
+        margin: auto;
         border-radius: 50%;
-        background-color: rgba(0, 0, 0, 0.2);
+        background-color: var(--board-hint);
       }
+
+      // Opponent checker that this move would capture: a terracotta ring around it.
+      &.attacking::before {
+        content: '';
+        position: absolute;
+        inset: 7%;
+        border: max(3px, calc(var(--cell-size) * 0.055)) solid var(--board-capture);
+        border-radius: 50%;
+      }
+    }
+  }
+
+  .ranks,
+  .files {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    font-size: max(9px, calc(var(--cell-size) * 0.14));
+    font-weight: var(--weight-semibold);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+
+    // Each label sits on a square; its class says which colour that square is.
+    .white {
+      color: var(--board-coord-on-light);
+    }
+
+    .black {
+      color: var(--board-coord-on-dark);
     }
   }
 
   .ranks {
-    position: absolute;
-    display: flex;
+    top: var(--board-frame-width);
+    left: var(--board-frame-width);
     flex-direction: column;
 
     span {
-      height: 90px;
-      padding-left: 3px;
-      font-weight: bold;
-      font-size: 19px;
-      user-select: none;
-
-      &.black {
-        color: #ebecd0;
-      }
-
-      &.white {
-        color: #3b7478;
-      }
+      height: var(--cell-size);
+      padding: 0.4em 0 0 0.45em;
     }
   }
 
   .files {
-    position: absolute;
-    right: 23px;
-    bottom: 20px;
-    display: flex;
-    text-align-last: right;
+    bottom: var(--board-frame-width);
+    left: var(--board-frame-width);
 
     span {
-      width: 90px;
-      color: black;
-      font-weight: bold;
-      font-size: 19px;
-      user-select: none;
-
-      &.black {
-        color: #ebecd0;
-      }
-
-      &.white {
-        color: #3b7478;
-      }
+      width: var(--cell-size);
+      padding: 0 0.45em 0.4em 0;
+      text-align: right;
     }
   }
 }

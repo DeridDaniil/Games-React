@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import GameEnds from './GameEnds';
 import CheckersContext from '../../model/Context';
 import { initCheckersGame } from '../../model/constant';
-import { Status } from '../../model/types';
+import { ActionTypes, Status } from '../../model/types';
 import { ProfileProvider } from '../../../../profile/model/ProfileContext';
 import { loadSession, register } from '../../../../profile/lib/profileStorage';
 
@@ -18,15 +18,16 @@ afterEach(() => {
   localStorage.clear();
 });
 
-const renderWithStatus = (status, { strict = false } = {}) => {
+const renderWithStatus = (status, { strict = false, state = {} } = {}) => {
+  const dispatch = vi.fn();
   const tree = (
     <ProfileProvider>
-      <CheckersContext.Provider value={{ checkersState: { ...initCheckersGame, status }, dispatch: vi.fn() }}>
+      <CheckersContext.Provider value={{ checkersState: { ...initCheckersGame, ...state, status }, dispatch }}>
         <GameEnds />
       </CheckersContext.Provider>
     </ProfileProvider>
   );
-  return render(strict ? <StrictMode>{tree}</StrictMode> : tree);
+  return { ...render(strict ? <StrictMode>{tree}</StrictMode> : tree), dispatch };
 };
 
 const checkersStats = () => loadSession().stats.checkers;
@@ -52,6 +53,20 @@ describe('Checkers GameEnds', () => {
   it('records the result only once under StrictMode', () => {
     renderWithStatus(Status.whiteWins, { strict: true });
     expect(checkersStats()).toEqual({ ...noGames, wins: 1 });
+  });
+
+  it('marks the game as recorded, so the same game is never recorded twice', () => {
+    const { dispatch } = renderWithStatus(Status.blackWins);
+
+    expect(dispatch).toHaveBeenCalledWith({ type: ActionTypes.RESULT_RECORDED });
+  });
+
+  // A game resumed by Take Back after it ended keeps the result recorded when it first ended.
+  it('records nothing for a game whose result is already recorded', () => {
+    renderWithStatus(Status.whiteOnTime, { state: { resultRecorded: true } });
+
+    expect(screen.getByRole('heading', { name: Status.whiteOnTime })).toBeTruthy();
+    expect(checkersStats()).toEqual(noGames);
   });
 
   it('renders nothing and records nothing while the game is ongoing', () => {

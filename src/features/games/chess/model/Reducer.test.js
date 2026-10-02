@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { ChessReducer } from './Reducer';
-import { clearCandidates, generateCandidateMoves, makeNewMove, takeBack } from './actions/move';
+import { clearCandidates, generateCandidateMoves, makeNewMove, playMove, takeBack } from './actions/move';
 import { closePopup, openPromotion } from './actions/popup';
 import {
   detectCheckmate,
   detectInsufficientMaterial,
   detectStalemate,
+  markResultRecorded,
   setupNewGame,
   startClock,
-  tickClock,
-  updateCastling
+  tickClock
 } from './actions/game';
 import { DEFAULT_TIME_CONTROL_MS, initChessGame } from './constant';
-import { Status } from './types';
+import { ActionTypes, Status } from './types';
 import arbiter from '../lib/arbiter/arbiter';
-import { at, pieceAt, sq } from '../../shared/test/boardTestUtils';
+import { at, boardWith, pieceAt, sq } from '../../shared/test/boardTestUtils';
 
 const reduce = (state, ...actions) => actions.reduce(ChessReducer, state);
 const currentPosition = (state) => state.position[state.position.length - 1];
@@ -29,6 +29,12 @@ const moveAction = (state, from, target, newMove = `${from}-${target}`) => {
 
 const playMoves = (state, moves) =>
   moves.reduce((current, [from, target]) => ChessReducer(current, moveAction(current, from, target)), state);
+
+// A game that starts from an arbitrary position with `turn` to move.
+const gameFrom = (pieces, turn = 'white') => ({ ...initChessGame, position: [boardWith(pieces)], turn });
+
+// Both kings and all four rooks on their starting squares.
+const castlingHome = { e1: 'white-king', a1: 'white-rook', h1: 'white-rook', e8: 'black-king', a8: 'black-rook', h8: 'black-rook' };
 
 describe('ChessReducer', () => {
   describe('initial state', () => {
@@ -120,17 +126,107 @@ describe('ChessReducer', () => {
       expect(state.movesList).toBe(initChessGame.movesList);
     });
 
-    // KNOWN LIMITATION (not fixed in this stage): castling rights are not part of the undo history.
-    it('keeps castling rights lost by the undone king move (current behaviour)', () => {
+    it('restores the castling rights lost by the undone king move', () => {
       const opening = playMoves(initChessGame, [['e2', 'e4'], ['e7', 'e5']]);
-      // Figures.jsx dispatches CAN_CASTLE right before NEW_MOVE for king and rook moves.
-      const kingMoved = reduce(opening, updateCastling('none'), moveAction(opening, 'e1', 'e2'));
+      const kingMoved = playMoves(opening, [['e1', 'e2']]);
 
       const state = ChessReducer(kingMoved, takeBack());
 
+      expect(kingMoved.castleDirection.white).toBe('none');
       expect(state.turn).toBe('white');
       expect(pieceAt(currentPosition(state), 'e1')).toBe('white-king');
-      expect(state.castleDirection.white).toBe('none');
+      expect(state.castleDirection).toEqual({ white: 'both', black: 'both' });
+    });
+
+    it('restores the castling right lost by the undone rook move', () => {
+      const rookMoved = playMoves(gameFrom(castlingHome), [['a1', 'a2']]);
+
+      const state = ChessReducer(rookMoved, takeBack());
+
+      expect(rookMoved.castleDirection.white).toBe('right');
+      expect(state.castleDirection).toEqual({ white: 'both', black: 'both' });
+      expect(state.castlingHistory).toEqual([]);
+    });
+
+    it('gives back the castling right lost when the opponent captured a corner rook', () => {
+      const captured = playMoves(gameFrom({ ...castlingHome, b7: 'black-bishop' }, 'black'), [['b7', 'h1']]);
+
+      const state = ChessReducer(captured, takeBack());
+
+      expect(captured.castleDirection.white).toBe('left');
+      expect(pieceAt(currentPosition(state), 'h1')).toBe('white-rook');
+      expect(state.castleDirection.white).toBe('both');
+    });
+
+    it('restores the rights of each undone move in turn', () => {
+      const played = playMoves(gameFrom(castlingHome), [['a1', 'a2'], ['h8', 'h5'], ['e1', 'd1']]);
+
+      const oneBack = ChessReducer(played, takeBack());
+      const twoBack = ChessReducer(oneBack, takeBack());
+      const threeBack = ChessReducer(twoBack, takeBack());
+
+      expect(played.castleDirection).toEqual({ white: 'none', black: 'left' });
+      expect(oneBack.castleDirection).toEqual({ white: 'right', black: 'left' });
+      expect(twoBack.castleDirection).toEqual({ white: 'right', black: 'both' });
+      expect(threeBack.castleDirection).toEqual({ white: 'both', black: 'both' });
+    });
+
+    it('puts a finished game back in play when the deciding move is taken back', () => {
+      const mated = reduce(
+        playMoves(initChessGame, [['f2', 'f3'], ['e7', 'e5'], ['g2', 'g4'], ['d8', 'h4']]),
+        detectCheckmate('black')
+      );
+
+      const state = ChessReducer(mated, takeBack());
+
+      expect(mated.status).toBe(Status.black);
+      expect(state.status).toBe(Status.ongoing);
+      expect(state.turn).toBe('black');
+      expect(pieceAt(currentPosition(state), 'd8')).toBe('black-queen');
+    });
+
+    it('stops the clock once every move is taken back, until White picks up a piece again', () => {
+      const afterTwo = playMoves(reduce(initChessGame, startClock()), [['e2', 'e4'], ['e7', 'e5']]);
+
+      const oneBack = ChessReducer(afterTwo, takeBack());
+      const allBack = ChessReducer(oneBack, takeBack());
+
+      expect(oneBack.clockStarted).toBe(true);
+      expect(allBack.clockStarted).toBe(false);
+    });
+
+    it('keeps the mark that the result of a resumed game was already recorded', () => {
+      const recorded = reduce(
+        playMoves(initChessGame, [['f2', 'f3'], ['e7', 'e5'], ['g2', 'g4'], ['d8', 'h4']]),
+        detectCheckmate('black'),
+        markResultRecorded()
+      );
+
+      const state = ChessReducer(recorded, takeBack());
+
+      expect(state.status).toBe(Status.ongoing);
+      expect(state.resultRecorded).toBe(true);
+    });
+
+    it('only cancels a pending promotion and keeps the last finished move', () => {
+      const afterE4 = playMoves(initChessGame, [['e2', 'e4']]);
+      const promoting = reduce(
+        afterE4,
+        generateCandidateMoves({ candidateMoves: [[0, 0]] }),
+        openPromotion({ axisY: 1, axisX: 0, y: 0, x: 0 })
+      );
+
+      const state = ChessReducer(promoting, takeBack());
+
+      expect(state.status).toBe(Status.ongoing);
+      expect(state.promotionSquare).toBeNull();
+      expect(state.candidateMoves).toEqual([]);
+      expect(state.turn).toBe('black');
+      expect(state.position).toBe(afterE4.position);
+      expect(state.movesList).toBe(afterE4.movesList);
+      expect(state.timeHistory).toBe(afterE4.timeHistory);
+      expect(state.whiteTime).toBe(afterE4.whiteTime);
+      expect(state.blackTime).toBe(afterE4.blackTime);
     });
   });
 
@@ -153,22 +249,44 @@ describe('ChessReducer', () => {
     });
   });
 
-  describe('CAN_CASTLE', () => {
-    it('updates the castling rights of the player to move', () => {
-      const white = ChessReducer(initChessGame, updateCastling('right'));
-      const black = ChessReducer({ ...initChessGame, turn: 'black' }, updateCastling('left'));
-
-      expect(white.castleDirection).toEqual({ white: 'right', black: 'both' });
-      expect(black.castleDirection).toEqual({ white: 'both', black: 'left' });
+  describe('castling rights after a move', () => {
+    it('are lost on both sides once the king moves', () => {
+      const state = playMoves(gameFrom(castlingHome), [['e1', 'e2']]);
+      expect(state.castleDirection).toEqual({ white: 'none', black: 'both' });
     });
 
-    it('does not leak castling rights into the initial state or a new game', () => {
-      const afterKingMove = ChessReducer(initChessGame, updateCastling('none'));
-      const newGame = ChessReducer(afterKingMove, setupNewGame());
+    it('lose the side of the rook that moves first', () => {
+      const queenside = playMoves(gameFrom(castlingHome), [['a1', 'a2']]);
+      const kingside = playMoves(gameFrom(castlingHome, 'black'), [['h8', 'h5']]);
 
-      expect(afterKingMove.castleDirection.white).toBe('none');
-      expect(initChessGame.castleDirection).toEqual({ white: 'both', black: 'both' });
-      expect(newGame.castleDirection).toEqual({ white: 'both', black: 'both' });
+      expect(queenside.castleDirection).toEqual({ white: 'right', black: 'both' });
+      expect(kingside.castleDirection).toEqual({ white: 'both', black: 'left' });
+    });
+
+    it('lose the side of a rook captured on its starting square', () => {
+      const state = playMoves(gameFrom({ ...castlingHome, b7: 'black-bishop' }, 'black'), [['b7', 'h1']]);
+      expect(state.castleDirection).toEqual({ white: 'left', black: 'both' });
+    });
+
+    it('are spent by castling', () => {
+      const state = playMoves(gameFrom(castlingHome), [['e1', 'g1']]);
+
+      expect(pieceAt(currentPosition(state), 'f1')).toBe('white-rook');
+      expect(state.castleDirection.white).toBe('none');
+    });
+
+    it('do not come back when a rook returns to its corner', () => {
+      const state = playMoves(gameFrom(castlingHome), [['a1', 'a2'], ['e8', 'd8'], ['a2', 'a1']]);
+      expect(state.castleDirection).toEqual({ white: 'right', black: 'none' });
+    });
+
+    it('keep a snapshot of the rights before every move', () => {
+      const state = playMoves(gameFrom(castlingHome), [['a1', 'a2'], ['e8', 'd8']]);
+
+      expect(state.castlingHistory).toEqual([
+        { white: 'both', black: 'both' },
+        { white: 'right', black: 'both' }
+      ]);
     });
   });
 
@@ -224,6 +342,29 @@ describe('ChessReducer', () => {
       expect(ChessReducer(promoting, tickClock(1000)).whiteTime).toBe(DEFAULT_TIME_CONTROL_MS - 1000);
     });
 
+    it('TICK running out during a promotion ends the game and drops the pending promotion', () => {
+      const promoting = reduce(
+        { ...initChessGame, whiteTime: 500 },
+        generateCandidateMoves({ candidateMoves: [[7, 0]] }),
+        openPromotion({ axisY: 6, axisX: 0, y: 7, x: 0 })
+      );
+
+      const state = ChessReducer(promoting, tickClock(1000));
+
+      expect(state.status).toBe(Status.blackOnTime);
+      expect(state.promotionSquare).toBeNull();
+      expect(state.candidateMoves).toEqual([]);
+    });
+
+    it('TIMEOUT ends the game and clears the highlighted moves', () => {
+      const highlighted = ChessReducer(initChessGame, generateCandidateMoves({ candidateMoves: [[2, 4]] }));
+
+      const state = ChessReducer(highlighted, { type: ActionTypes.TIMEOUT, payload: 'white' });
+
+      expect(state.status).toBe(Status.blackOnTime);
+      expect(state.candidateMoves).toEqual([]);
+    });
+
     it('TICK is ignored once the game is over', () => {
       const finished = ChessReducer(initChessGame, detectCheckmate('white'));
       expect(ChessReducer(finished, tickClock(1000))).toBe(finished);
@@ -248,6 +389,89 @@ describe('ChessReducer', () => {
       );
 
       expect(ChessReducer(finished, setupNewGame())).toEqual(initChessGame);
+    });
+
+    it('starts with the result of the new game not yet recorded', () => {
+      const recorded = reduce(initChessGame, detectCheckmate('white'), markResultRecorded());
+
+      expect(recorded.resultRecorded).toBe(true);
+      expect(ChessReducer(recorded, setupNewGame()).resultRecorded).toBe(false);
+    });
+
+    it('always starts with full castling rights and no castling history', () => {
+      const kingMoved = playMoves(initChessGame, [['e2', 'e4'], ['e7', 'e5'], ['e1', 'e2']]);
+
+      const state = ChessReducer(kingMoved, setupNewGame());
+
+      expect(kingMoved.castleDirection.white).toBe('none');
+      expect(state.castleDirection).toEqual({ white: 'both', black: 'both' });
+      expect(state.castlingHistory).toEqual([]);
+      expect(initChessGame.castleDirection).toEqual({ white: 'both', black: 'both' });
+    });
+  });
+
+  describe('playMove (a finished move and the ending it causes)', () => {
+    // Plays `from`-`target` from the current position like the board does, optionally promoting the pawn.
+    const finish = (state, from, target, promotesTo) => {
+      const position = currentPosition(state);
+      const figure = pieceAt(position, from);
+      const [y, x] = sq(target);
+      const newPosition = arbiter.performMove({ position, figure, ...at(from), y, x });
+      if (promotesTo) newPosition[y][x] = `${figure.slice(0, 5)}-${promotesTo}`;
+      const actions = playMove({ state, newPosition, newMove: `${from}-${target}` });
+      return { actions: actions.map(action => action.type), state: actions.reduce(ChessReducer, state) };
+    };
+
+    it('only records a move that does not end the game', () => {
+      const { actions, state } = finish(initChessGame, 'e2', 'e4');
+
+      expect(actions).toEqual([ActionTypes.NEW_MOVE]);
+      expect(state.status).toBe(Status.ongoing);
+    });
+
+    it('declares the mover the winner after a checkmating move', () => {
+      const opening = playMoves(initChessGame, [['f2', 'f3'], ['e7', 'e5'], ['g2', 'g4']]);
+      const { actions, state } = finish(opening, 'd8', 'h4');
+
+      expect(actions).toEqual([ActionTypes.NEW_MOVE, ActionTypes.WIN]);
+      expect(state.status).toBe(Status.black);
+    });
+
+    it('ends the game when a promotion checkmates', () => {
+      const promotion = gameFrom({ b6: 'white-king', c7: 'white-pawn', a8: 'black-king' });
+
+      expect(finish(promotion, 'c7', 'c8', 'queen').state.status).toBe(Status.white);
+      expect(finish(promotion, 'c7', 'c8', 'rook').state.status).toBe(Status.white);
+    });
+
+    it('ends the game in a draw when a promotion stalemates', () => {
+      const { actions, state } = finish(gameFrom({ c1: 'white-king', g7: 'white-pawn', a1: 'black-king' }), 'g7', 'g8', 'queen');
+
+      expect(actions).toEqual([ActionTypes.NEW_MOVE, ActionTypes.STALEMATE]);
+      expect(state.status).toBe(Status.stalemate);
+    });
+
+    it('ends the game in a draw when an under-promotion leaves insufficient material', () => {
+      const promotion = gameFrom({ b6: 'white-king', c7: 'white-pawn', a8: 'black-king' });
+
+      expect(finish(promotion, 'c7', 'c8', 'knight').state.status).toBe(Status.insufficient);
+      expect(finish(promotion, 'c7', 'c8', 'bishop').state.status).toBe(Status.insufficient);
+    });
+
+    it('is no stalemate when the only reply is an en passant capture', () => {
+      const game = gameFrom({ a1: 'white-king', e5: 'white-pawn', b3: 'black-queen', e6: 'black-knight', h8: 'black-king', d7: 'black-pawn' }, 'black');
+      const { actions, state } = finish(game, 'd7', 'd5');
+
+      expect(actions).toEqual([ActionTypes.NEW_MOVE]);
+      expect(state.status).toBe(Status.ongoing);
+    });
+
+    it('is no checkmate when an en passant capture removes the checking pawn', () => {
+      const game = gameFrom({ e4: 'white-king', e5: 'white-pawn', d7: 'black-pawn', c6: 'black-pawn', f8: 'black-rook', a3: 'black-rook', b5: 'black-knight', h8: 'black-king' }, 'black');
+      const { actions, state } = finish(game, 'd7', 'd5');
+
+      expect(actions).toEqual([ActionTypes.NEW_MOVE]);
+      expect(state.status).toBe(Status.ongoing);
     });
   });
 

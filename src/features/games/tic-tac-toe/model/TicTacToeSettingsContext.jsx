@@ -10,12 +10,17 @@ const defaultSettings = {
 };
 
 export function TicTacToeSettingsProvider({ children }) {
-  const [settings, setSettings] = useState(defaultSettings);
-  const [settingsVersion, setSettingsVersion] = useState(0);
+  const [{ settings, settingsVersion }, setState] = useState({ settings: defaultSettings, settingsVersion: 0 });
 
+  // A new version (and so a new game) only when a value really changes: choosing the option that
+  // is already selected keeps the same state and nothing re-renders.
   const updateSettings = (patch) => {
-    setSettings(prev => ({ ...prev, ...patch }));
-    setSettingsVersion(v => v + 1);
+    setState(prev => {
+      const changed = Object.entries(patch).some(([key, value]) => prev.settings[key] !== value);
+      return changed
+        ? { settings: { ...prev.settings, ...patch }, settingsVersion: prev.settingsVersion + 1 }
+        : prev;
+    });
   };
 
   return (

@@ -1,21 +1,24 @@
 import { useReducer, useEffect } from 'react';
+import { Undo2 } from 'lucide-react';
 import Board from './ui/Board/Board';
 import CheckerFigures from './ui/CheckerFigures/CheckerFigures';
 import CheckersContext from './model/Context';
 import { CheckersReducer } from './model/Reducer';
-import { initCheckersGame } from './model/constant';
+import { DEFAULT_TIME_CONTROL_MS, initCheckersGame } from './model/constant';
 import arbiter from './lib/arbiter/arbiter';
 import { setForcedCaptures, gameOver, takeBack, surrender } from './model/actions/move';
 import { Status } from './model/types';
 import GameEnds from './ui/GameEnds/GameEnds';
 import CheckersClock from './ui/Clock/CheckersClock';
+import CheckersInfo from './ui/Info/CheckersInfo';
 import GameLayout from '../shared/ui/GameLayout/GameLayout';
+import GameHeader from '../shared/ui/GameHeader/GameHeader';
 import GameControlPanel from '../shared/ui/GameControlPanel/GameControlPanel';
 import MoveHistory from '../shared/ui/MoveHistory/MoveHistory';
 import GameAction from '../shared/ui/GameAction/GameAction';
 import SurrenderControl from '../shared/ui/SurrenderControl/SurrenderControl';
-import './Checkers.scss';
 
+const CONTEXT = `Two players · ${DEFAULT_TIME_CONTROL_MS / 60000} min each`;
 const SURRENDER_MESSAGE = 'This will end the current game.';
 
 function Checkers() {
@@ -53,7 +56,7 @@ function Checkers() {
   // A checkers surrender ends the game against the side to move; GameEnds then records the result.
   const actions = (
     <>
-      <GameAction onClick={() => dispatch(takeBack())}>Take Back</GameAction>
+      <GameAction icon={<Undo2 />} onClick={() => dispatch(takeBack())}>Take Back</GameAction>
       <SurrenderControl message={SURRENDER_MESSAGE} onConfirm={() => dispatch(surrender())} />
     </>
   );
@@ -61,8 +64,7 @@ function Checkers() {
   return (
     <CheckersContext.Provider value={checkersProviderState}>
       <GameLayout
-        className="checkers"
-        title="Checkers"
+        header={<GameHeader title="Checkers" context={CONTEXT} info={<CheckersInfo />} />}
         board={board}
         controls={
           <GameControlPanel actions={actions}>

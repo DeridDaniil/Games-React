@@ -1,8 +1,15 @@
+// Pieces are lifted off the squares by a 1px shadow.
 .figure {
-  width: 90px;
-  height: 90px;
   position: absolute;
+  width: var(--cell-size);
+  height: var(--cell-size);
   background-size: cover;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
 
   &.white-rook {background-image: url('../../assets/white-rook.png');}
   &.white-knight {background-image: url('../../assets/white-knight.png');}

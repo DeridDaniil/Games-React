@@ -7,6 +7,7 @@ import {
   generateCandidateAttack,
   generateCandidateMoves,
   makeNewMove,
+  markResultRecorded,
   setForcedCaptures,
   setupNewGame,
   startClock,
@@ -28,6 +29,11 @@ const afterSecondLeg = boardWith({ e1: 'black-queen' });
 const whiteMove = makeNewMove({ newPosition: afterWhiteMove, newMove: 'c3-d4' });
 const blackFirstLeg = continueCapture({ newPosition: afterFirstLeg, chainCapturePiece: sq('c3'), newMove: 'e5xc3' });
 const blackSecondLeg = makeNewMove({ newPosition: afterSecondLeg, newMove: 'c3xe1' });
+
+// The same chain going on for a third jump.
+const afterThirdLeg = boardWith({ g3: 'black-queen' });
+const blackSecondLegContinues = continueCapture({ newPosition: afterSecondLeg, chainCapturePiece: sq('e1'), newMove: 'c3xe1' });
+const blackThirdLeg = makeNewMove({ newPosition: afterThirdLeg, newMove: 'e1xg3' });
 
 describe('CheckersReducer', () => {
   describe('initial state', () => {
@@ -68,24 +74,40 @@ describe('CheckersReducer', () => {
   });
 
   describe('chain capture', () => {
-    it('CONTINUE_CAPTURE records the leg but keeps the turn with the capturing piece', () => {
+    it('CONTINUE_CAPTURE shows the jump but keeps the turn and the moves list as they were', () => {
       const state = reduce(initCheckersGame, whiteMove, blackFirstLeg);
 
       expect(state.turn).toBe('black');
       expect(state.chainCapturePiece).toEqual(sq('c3'));
-      expect(state.position).toHaveLength(3);
-      expect(state.movesList).toEqual(['c3-d4', 'e5xc3']);
+      expect(state.position.at(-1)).toBe(afterFirstLeg);
+      expect(state.movesList).toEqual(['c3-d4']);
       expect(state.timeHistory).toHaveLength(1);
     });
 
-    it('the final leg passes the turn and ends the chain', () => {
+    it('records a finished double capture as one move and one position', () => {
       const state = reduce(initCheckersGame, whiteMove, blackFirstLeg, blackSecondLeg);
 
       expect(state.turn).toBe('white');
       expect(state.chainCapturePiece).toBeNull();
-      expect(state.position).toHaveLength(4);
-      expect(state.movesList).toEqual(['c3-d4', 'e5xc3', 'c3xe1']);
+      expect(state.movesList).toEqual(['c3-d4', 'e5xc3xe1']);
+      expect(state.position).toEqual([initCheckersGame.position[0], afterWhiteMove, afterSecondLeg]);
       expect(state.timeHistory).toHaveLength(2);
+    });
+
+    it('records a finished triple capture as one move and one position', () => {
+      const state = reduce(initCheckersGame, whiteMove, blackFirstLeg, blackSecondLegContinues, blackThirdLeg);
+
+      expect(state.turn).toBe('white');
+      expect(state.movesList).toEqual(['c3-d4', 'e5xc3xe1xg3']);
+      expect(state.position).toEqual([initCheckersGame.position[0], afterWhiteMove, afterThirdLeg]);
+    });
+
+    it('adds exactly one entry per turn, so moves pair up by turn again', () => {
+      const whiteReply = makeNewMove({ newPosition: afterWhiteMove, newMove: 'a3-b4' });
+      const state = reduce(initCheckersGame, whiteMove, blackFirstLeg, blackSecondLeg, whiteReply);
+
+      expect(state.movesList).toEqual(['c3-d4', 'e5xc3xe1', 'a3-b4']);
+      expect(state.turn).toBe('black');
     });
   });
 
@@ -158,17 +180,78 @@ describe('CheckersReducer', () => {
       expect(CheckersReducer(initCheckersGame, takeBack())).toBe(initCheckersGame);
     });
 
-    // KNOWN BUG (not fixed in this stage): a multi-leg capture is undone one leg at a time and
-    // every TAKE_BACK flips the turn, so after undoing a whole chain the wrong side is to move.
-    it('flips the turn for every undone capture leg (current behaviour, known bug)', () => {
-      const afterChain = reduce(initCheckersGame, whiteMove, blackFirstLeg, blackSecondLeg);
+    // White plays after 1 s, Black thinks 3 s, jumps once, thinks 2 s more.
+    const blackThinking = reduce(initCheckersGame, startClock(), tickClock(1000), whiteMove, tickClock(3000));
+    const midChain = reduce(blackThinking, blackFirstLeg, tickClock(2000));
 
-      const oneBack = CheckersReducer(afterChain, takeBack());
-      const twoBack = CheckersReducer(oneBack, takeBack());
+    it('takes back a finished chain capture as one whole turn', () => {
+      const afterChain = CheckersReducer(midChain, blackSecondLeg);
 
-      expect(oneBack.turn).toBe('black');
-      expect(twoBack.position).toEqual([initCheckersGame.position[0], afterWhiteMove]);
-      expect(twoBack.turn).toBe('white');
+      const state = CheckersReducer(afterChain, takeBack());
+
+      expect(state.position).toEqual([initCheckersGame.position[0], afterWhiteMove]);
+      expect(state.movesList).toEqual(['c3-d4']);
+      expect(state.turn).toBe('black');
+      expect(state.whiteTime).toBe(DEFAULT_TIME_CONTROL_MS - 1000);
+      expect(state.blackTime).toBe(DEFAULT_TIME_CONTROL_MS);
+      expect(state.timeHistory).toHaveLength(1);
+    });
+
+    it('takes back a finished triple capture as one whole turn', () => {
+      const afterChain = reduce(initCheckersGame, whiteMove, blackFirstLeg, blackSecondLegContinues, blackThirdLeg);
+
+      const state = CheckersReducer(afterChain, takeBack());
+
+      expect(state.position).toEqual([initCheckersGame.position[0], afterWhiteMove]);
+      expect(state.movesList).toEqual(['c3-d4']);
+      expect(state.turn).toBe('black');
+    });
+
+    it('takes back an unfinished chain to the start of the turn and keeps the same player to move', () => {
+      const state = CheckersReducer(midChain, takeBack());
+
+      expect(state.position).toEqual([initCheckersGame.position[0], afterWhiteMove]);
+      expect(state.movesList).toEqual(['c3-d4']);
+      expect(state.turn).toBe('black');
+      expect(state.chainCapturePiece).toBeNull();
+      expect(state.whiteTime).toBe(DEFAULT_TIME_CONTROL_MS - 1000);
+      expect(state.blackTime).toBe(DEFAULT_TIME_CONTROL_MS);
+      expect(state.turnStartTimes).toEqual(midChain.turnStartTimes);
+      expect(state.timeHistory).toEqual(midChain.timeHistory);
+      expect(state.clockStarted).toBe(true);
+    });
+
+    it('puts a finished game back in play and keeps the mark that its result was recorded', () => {
+      const finished = reduce(initCheckersGame, whiteMove, gameOver({ status: Status.whiteWins }), markResultRecorded());
+
+      const state = CheckersReducer(finished, takeBack());
+
+      expect(state.status).toBe(Status.ongoing);
+      expect(state.turn).toBe('white');
+      expect(state.position).toEqual(initCheckersGame.position);
+      expect(state.resultRecorded).toBe(true);
+    });
+
+    it('clears the highlighted moves of the turn it takes back', () => {
+      const highlighted = reduce(
+        initCheckersGame,
+        whiteMove,
+        generateCandidateMoves({ candidateMoves: [sq('a5')] }),
+        generateCandidateAttack({ candidateAttack: [sq('b4')] })
+      );
+
+      const state = CheckersReducer(highlighted, takeBack());
+
+      expect(state.candidateMoves).toEqual([]);
+      expect(state.candidateAttack).toEqual([]);
+    });
+
+    it('lets the chain be played again after it was taken back', () => {
+      const replayed = reduce(midChain, takeBack(), blackFirstLeg, blackSecondLeg);
+
+      expect(replayed.movesList).toEqual(['c3-d4', 'e5xc3xe1']);
+      expect(replayed.position).toEqual([initCheckersGame.position[0], afterWhiteMove, afterSecondLeg]);
+      expect(replayed.turn).toBe('white');
     });
   });
 
@@ -180,6 +263,14 @@ describe('CheckersReducer', () => {
     it('SURRENDER ends the game against the player to move', () => {
       expect(CheckersReducer(initCheckersGame, surrender()).status).toBe(Status.whiteSurrender);
       expect(CheckersReducer({ ...initCheckersGame, turn: 'black' }, surrender()).status).toBe(Status.blackSurrender);
+    });
+
+    it('RESULT_RECORDED marks the result of the game as recorded until a new game starts', () => {
+      const recorded = reduce(initCheckersGame, gameOver({ status: Status.blackWins }), markResultRecorded());
+
+      expect(initCheckersGame.resultRecorded).toBe(false);
+      expect(recorded.resultRecorded).toBe(true);
+      expect(CheckersReducer(recorded, setupNewGame(initCheckersGame)).resultRecorded).toBe(false);
     });
 
     it('SURRENDER is ignored once the game is already over', () => {

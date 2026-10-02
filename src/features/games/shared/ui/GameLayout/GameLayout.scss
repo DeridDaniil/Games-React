@@ -1,21 +1,90 @@
+@use '../../../../../shared/styles/breakpoints' as bp;
+
+// Board geometry for Chess and Checkers. --board-size is the edge of the 8×8 cells: on wide screens
+// it fits the window height next to the side panel, on narrow ones the page width. --cell-size is
+// rounded down to whole pixels so the squares meet without seams. The page width comes from the
+// .app__main container (cqi), so a vertical scrollbar can never push the board sideways.
 .game-layout {
-  position: relative;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  --board-frame-width: 8px;
+  --board-outline: calc(2 * var(--board-frame-width) + 2px);
+  --side-width: 320px;
+  --layout-gap: var(--space-6);
+  --game-header-space: 100px;
+  --board-size: max(
+    240px,
+    min(
+      800px,
+      100dvh - 2 * var(--page-pad-y) - var(--game-header-space) - var(--board-outline),
+      100cqi - 2 * var(--page-pad-x) - var(--side-width) - var(--layout-gap) - var(--board-outline)
+    )
+  );
+  --cell-size: calc(var(--board-size) / 8);
+
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: var(--page-pad-y) var(--page-pad-x);
+
+  @supports (width: round(down, 10.5px, 1px)) {
+    --cell-size: round(down, var(--board-size) / 8, 1px);
+  }
+
+  @include bp.below(bp.$large) {
+    --side-width: 272px;
+    --layout-gap: var(--space-5);
+  }
+
+  // Stacked: the board fits the page width, and leaves enough height for the clock under it to stay
+  // on screen above the bottom navigation.
+  @include bp.below(bp.$small) {
+    --clock-space: 88px;
+    --board-size: max(
+      200px,
+      min(
+        640px,
+        100cqi - 2 * var(--page-pad-x) - var(--board-outline),
+        100dvh - var(--page-pad-y) - var(--game-header-space) - var(--board-outline) - var(--clock-space)
+          - var(--app-nav-height) - env(safe-area-inset-bottom, 0px)
+      )
+    );
+
+    width: 100%;
+    max-width: calc(8 * var(--cell-size) + var(--board-outline) + 2 * var(--page-pad-x));
+  }
 }
 
 .game-layout__body {
   display: grid;
-  grid-template: min-content 1fr / 1fr 310px;
-  column-gap: 20px;
+  grid-template-columns: auto var(--side-width);
+  gap: var(--layout-gap);
+
+  @include bp.below(bp.$small) {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
 }
 
 .game-layout__board {
-  justify-self: end;
-  display: flex;
-  flex-direction: column;
   position: relative;
   width: max-content;
+}
+
+// Next to the board the side panel is exactly as tall as the board and scrolls inside;
+// under the board it simply takes the height of its content.
+.game-layout__side {
+  position: relative;
+  min-width: 0;
+
+  > * {
+    position: absolute;
+    inset: 0;
+  }
+
+  @include bp.below(bp.$small) {
+    width: 100%;
+
+    > * {
+      position: static;
+    }
+  }
 }
