@@ -34,12 +34,14 @@ const pickUp = ({ position, from, turn = 'white', clockStarted = true }: PickUp)
   if (!checker) throw new Error(`No checker on ${from}`);
   const dispatch = vi.fn<Dispatch<CheckersAction>>();
 
-  // Mirrors Checker.onDragStart: the engine provides the highlighted moves and attacked pieces.
+  // Mirrors Checker.onDragStart: the checker is selected and the engine provides its highlighted
+  // moves and attacked pieces.
   const checkersState: CheckersState = {
     ...initCheckersGame,
     position: [position],
     turn,
     clockStarted,
+    selected: [axisY, axisX],
     candidateMoves: arbiter.getRegularMoves({ position, checker, axisY, axisX }),
     candidateAttack: arbiter.getAttackingMoves({ position, checker, axisY, axisX })
   };
@@ -134,12 +136,20 @@ describe('CheckerFigures drop handling', () => {
 
     dropOn('e5');
 
-    expect(types()).toEqual(sorted(ActionTypes.CONTINUE_CAPTURE, ActionTypes.CLEAR_CANDIDATE));
+    expect(types()).toEqual(sorted(
+      ActionTypes.CONTINUE_CAPTURE,
+      ActionTypes.CLEAR_CANDIDATE,
+      ActionTypes.GENERATE_CANDIDATE_ATTACK,
+      ActionTypes.GENERATE_CANDIDATE_MOVES
+    ));
     const { newPosition, chainCapturePiece, newMove } = payloadOf(ActionTypes.CONTINUE_CAPTURE);
     expect(chainCapturePiece).toEqual(sq('e5'));
     expect(newMove).toBe('c3xe5');
     expect(pieceAt(newPosition, 'd4')).toBe('');
     expect(pieceAt(newPosition, 'f6')).toBe('black-checker');
+    // The same checker stays selected, with only its next jump highlighted.
+    expect(payloadOf(ActionTypes.GENERATE_CANDIDATE_MOVES)).toEqual({ candidateMoves: [sq('g7')], from: sq('e5') });
+    expect(payloadOf(ActionTypes.GENERATE_CANDIDATE_ATTACK)).toEqual({ candidateAttack: [sq('f6')] });
   });
 
   it('promotes a white checker that reaches the last row', () => {
@@ -170,12 +180,19 @@ describe('CheckerFigures drop handling', () => {
 
     dropOn('f8');
 
-    expect(types()).toEqual(sorted(ActionTypes.CONTINUE_CAPTURE, ActionTypes.CLEAR_CANDIDATE));
+    expect(types()).toEqual(sorted(
+      ActionTypes.CONTINUE_CAPTURE,
+      ActionTypes.CLEAR_CANDIDATE,
+      ActionTypes.GENERATE_CANDIDATE_ATTACK,
+      ActionTypes.GENERATE_CANDIDATE_MOVES
+    ));
     const { newPosition, chainCapturePiece } = payloadOf(ActionTypes.CONTINUE_CAPTURE);
     expect(pieceAt(newPosition, 'f8')).toBe('white-queen');
     expect(pieceAt(newPosition, 'e7')).toBe('');
     expect(pieceAt(newPosition, 'c5')).toBe('black-checker');
     expect(chainCapturePiece).toEqual(sq('f8'));
+    // The new queen stays selected and lands right behind c5 on its next jump.
+    expect(payloadOf(ActionTypes.GENERATE_CANDIDATE_MOVES)).toEqual({ candidateMoves: [sq('b4')], from: sq('f8') });
   });
 
   it('ignores a drop outside the highlighted squares', () => {
@@ -184,6 +201,16 @@ describe('CheckerFigures drop handling', () => {
     expect(dropOn('e5')).toBe(false);
 
     expect(types()).toEqual([ActionTypes.CLEAR_CANDIDATE]);
+  });
+
+  // A click that moves the pointer a little turns into a drag; putting the checker back where it was
+  // leaves it selected, as a click would, so its highlighted squares can still be clicked.
+  it('keeps the checker selected when it is dropped back on its own square', () => {
+    const { dropOn, types } = pickUp({ position: createPosition(), from: 'c3' });
+
+    expect(dropOn('c3')).toBe(false);
+
+    expect(types()).toEqual([]);
   });
 
   // Highlights stay after a drag that ended off the board; whatever is dropped next is checked

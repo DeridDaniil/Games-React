@@ -3,13 +3,14 @@ import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CircleDot, Crown, Grid3x3, HardDrive } from 'lucide-react';
 import { useProfile } from '../../model/ProfileContext';
+import BrandMark from '../../../../shared/ui/BrandMark/BrandMark';
 import Button from '../../../../shared/ui/Button/Button';
 import FormField from '../../../../shared/ui/FormField/FormField';
 import './ProfileCreate.scss';
 
 const MODES = [
-  { key: 'login', tab: 'Sign in', submit: 'Sign in' },
-  { key: 'register', tab: 'Register', submit: 'Create profile' },
+  { key: 'login', tab: 'Sign in', submit: 'Sign in', submitting: 'Signing in…' },
+  { key: 'register', tab: 'Register', submit: 'Create profile', submitting: 'Creating profile…' },
 ] as const;
 
 type Mode = (typeof MODES)[number]['key'];
@@ -41,16 +42,6 @@ function validate(isRegister: boolean, { login, name, password }: FormValues): {
   return null;
 }
 
-// The app's mark from the navigation rail, drawn larger.
-const SignInMark = () => (
-  <svg className="profile-create__mark" viewBox="0 0 24 24" width="32" height="32" focusable="false" aria-hidden="true">
-    <rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor" />
-    <rect x="13.75" y="3.75" width="6.5" height="6.5" rx="1" fill="none" stroke="currentColor" strokeWidth="1.5" />
-    <rect x="3.75" y="13.75" width="6.5" height="6.5" rx="1" fill="none" stroke="currentColor" strokeWidth="1.5" />
-    <rect className="profile-create__mark-warm" x="13" y="13" width="8" height="8" rx="1.5" />
-  </svg>
-);
-
 // Sign-in and registration of the local profiles kept in this browser. Both end on Tic Tac Toe.
 function ProfileCreate() {
   const { register, login } = useProfile();
@@ -58,12 +49,15 @@ function ProfileCreate() {
   const [mode, setMode] = useState<Mode>('login');
   const [form, setForm] = useState<FormValues>({ login: '', name: '', password: '' });
   const [error, setError] = useState<{ message: string; fields: Field[]; attempt: number } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Set at once (state would only change on the next render), so a second submit is ignored.
+  const submittingRef = useRef(false);
   const attemptRef = useRef(0);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const isRegister = mode === 'register';
   // Every mode is listed in MODES, so the fallback is never used.
-  const { submit } = MODES.find(({ key }) => key === mode) ?? MODES[0];
+  const { submit, submitting } = MODES.find(({ key }) => key === mode) ?? MODES[0];
 
   const setField = (field: Field) => (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
@@ -76,8 +70,11 @@ function ProfileCreate() {
     setError({ message, fields, attempt: attemptRef.current });
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  // Checking the password takes a moment (see credentials.ts): meanwhile the button says so and
+  // further submits are ignored.
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submittingRef.current) return;
     const values = { login: form.login.trim(), name: form.name.trim(), password: form.password.trim() };
 
     const problem = validate(isRegister, values);
@@ -86,9 +83,16 @@ function ProfileCreate() {
       return;
     }
 
-    const result = isRegister
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    // However the check ends, the form is usable again afterwards.
+    const result = await (isRegister
       ? register(values.login, values.name, values.password)
-      : login(values.login, values.password);
+      : login(values.login, values.password)
+    ).finally(() => {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    });
     if (result.error) {
       fail(result.error, [STORAGE_ERROR_FIELDS[result.error]].filter(field => field !== undefined));
       return;
@@ -98,7 +102,7 @@ function ProfileCreate() {
   };
 
   const switchMode = (nextMode: Mode) => {
-    if (nextMode === mode) return;
+    if (nextMode === mode || submittingRef.current) return;
     setMode(nextMode);
     setError(null);
   };
@@ -131,7 +135,7 @@ function ProfileCreate() {
       <div className="profile-create__layout">
         <header className="profile-create__intro">
           <p className="profile-create__brand">
-            <SignInMark />
+            <BrandMark className="profile-create__mark" />
             Games-React
           </p>
           <h1 className="profile-create__title">Tic Tac Toe, Chess and Checkers</h1>
@@ -163,7 +167,7 @@ function ProfileCreate() {
           </div>
 
           <div id="auth-panel" role="tabpanel" aria-labelledby={`auth-tab-${mode}`}>
-            <form className="profile-create__form" onSubmit={handleSubmit}>
+            <form className="profile-create__form" onSubmit={(event) => { void handleSubmit(event); }}>
               <FormField
                 id="auth-login"
                 label="Login"
@@ -207,13 +211,15 @@ function ProfileCreate() {
                 </p>
               )}
 
-              <Button type="submit" variant="primary" className="profile-create__submit">{submit}</Button>
+              <Button type="submit" variant="primary" className="profile-create__submit" disabled={isSubmitting}>
+                {isSubmitting ? submitting : submit}
+              </Button>
             </form>
           </div>
 
           <p className="profile-create__note">
             <HardDrive aria-hidden="true" />
-            Profiles and statistics are stored on this device.
+            Profiles and statistics are stored on this device. This is a local profile, not an online account.
           </p>
         </div>
 

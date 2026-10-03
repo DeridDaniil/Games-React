@@ -222,6 +222,20 @@ describe('arbiter.insufficientMaterial', () => {
     expect(insufficient({ e1: 'white-king', e8: 'black-king', c1: 'white-bishop', c8: 'black-bishop' })).toBe(false);
   });
 
+  it('is true for king and two bishops on squares of one colour against king', () => {
+    expect(insufficient({ e1: 'white-king', e8: 'black-king', c1: 'white-bishop', e3: 'white-bishop' })).toBe(true);
+    expect(insufficient({ e1: 'white-king', e8: 'black-king', f1: 'white-bishop', d3: 'white-bishop' })).toBe(true);
+    expect(insufficient({ e1: 'white-king', e8: 'black-king', c8: 'black-bishop', e6: 'black-bishop' })).toBe(true);
+  });
+
+  it('is false for king and two bishops on squares of different colours against king', () => {
+    expect(insufficient({ e1: 'white-king', e8: 'black-king', c1: 'white-bishop', d1: 'white-bishop' })).toBe(false);
+  });
+
+  it('is false when a knight joins bishops of one colour', () => {
+    expect(insufficient({ e1: 'white-king', e8: 'black-king', c1: 'white-bishop', e3: 'white-bishop', g8: 'black-knight' })).toBe(false);
+  });
+
   it('is false when mating material remains', () => {
     expect(insufficient({ e1: 'white-king', e8: 'black-king', a1: 'white-rook' })).toBe(false);
     expect(insufficient({ e1: 'white-king', e8: 'black-king', d1: 'white-queen' })).toBe(false);

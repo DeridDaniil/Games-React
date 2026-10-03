@@ -11,9 +11,9 @@ function TicTacToeInfo() {
       <p><strong>Modes:</strong></p>
       <ul>
         <li><strong>vs Friend</strong>: two players take turns on the same device.</li>
-        <li><strong>vs Computer</strong>: choose your side and a difficulty. Easy plays random moves. Medium takes a win when it has one and blocks yours, otherwise it plays at random. Unbeatable never loses on 3×3; on 5×5 and 7×7 it only plans the next four marks, so it can be beaten there.</li>
+        <li><strong>vs Computer</strong>: choose your side and a difficulty. Easy plays random moves. Medium takes a win when it has one and blocks yours, otherwise it plays at random. Unbeatable searches every possible game on 3×3, so it never loses there. On 5×5 and 7×7 it looks four marks ahead, always taking a win and blocking yours: the strongest play it can find, but it can be beaten.</li>
       </ul>
-      <p><strong>Controls:</strong> click a cell, or move between cells with the arrow keys and press Enter or Space to place your mark. Settings change the mode, difficulty, board size and your side; choosing a different option starts a new game.</p>
+      <p><strong>Controls:</strong> click a cell, or move between cells with the arrow keys and press Enter or Space to place your mark. Settings change the mode, the board size and, against the computer, the difficulty and your side; choosing a different option starts a new game.</p>
     </div>
   );
 }

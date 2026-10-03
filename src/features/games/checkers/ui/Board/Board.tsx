@@ -19,6 +19,9 @@ function Board() {
       style += ' attacking'
     }
 
+    const { selected } = checkersState;
+    if (selected && selected[0] === y && selected[1] === x) style += ' selected';
+
     return style;
   }
 

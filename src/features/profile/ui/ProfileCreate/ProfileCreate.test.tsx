@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import ProfileCreate from './ProfileCreate';
 import { ProfileProvider } from '../../model/ProfileProvider';
-import { loadSession, logout, register } from '../../lib/profileStorage';
-import type { UserRecord } from '../../model/types';
-import { ofType } from '../../../../shared/test/dom';
+import { SAVE_ERROR, loadSession } from '../../lib/profileStorage';
+import { storeProfile, storedUsers } from '../../test/profileFixtures';
+import { getElement, ofType } from '../../../../shared/test/dom';
 
 function LocationProbe() {
   const { pathname } = useLocation();
@@ -31,19 +31,18 @@ const fill = (label: string, value: string) => fireEvent.change(field(label), { 
 const tab = (name: string) => screen.getByRole('tab', { name });
 const submit = (name: string) => fireEvent.click(screen.getByRole('button', { name }));
 const alertText = () => screen.getByRole('alert').textContent;
+// Signing in and registering check the password first, so their answer comes a moment later.
+const awaitedAlertText = async () => (await screen.findByRole('alert')).textContent;
 const isInvalid = (label: string) => field(label).getAttribute('aria-invalid') === 'true';
-const storedUsers = (): Record<string, UserRecord> | null => JSON.parse(localStorage.getItem('games-react-users') ?? 'null');
 
-const signUpTester = () => {
-  register('tester', 'Tester', 'secret');
-  logout();
-};
+const signUpTester = () => storeProfile('tester', 'Tester', { signedIn: false });
 
 beforeEach(() => {
   localStorage.clear();
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   localStorage.clear();
 });
 
@@ -169,17 +168,17 @@ describe('ProfileCreate', () => {
       expect(isInvalid('Password')).toBe(true);
       expect(isInvalid('Login')).toBe(false);
 
-      expect(storedUsers()).toBeNull();
+      expect(localStorage.getItem('games-react-users')).toBeNull();
     });
 
-    it('does not check lengths when signing in', () => {
+    it('does not check lengths when signing in', async () => {
       renderPage();
       fill('Login', 'ab');
       fill('Password', '1');
 
       submit('Sign in');
 
-      expect(alertText()).toBe('User not found');
+      expect(await awaitedAlertText()).toBe('User not found');
     });
 
     it('announces a repeated error again', () => {
@@ -208,7 +207,7 @@ describe('ProfileCreate', () => {
       expect(loadSession()).toMatchObject({ login: 'tester', name: 'Tester' });
     });
 
-    it('marks the login for an unknown user and stays on the page', () => {
+    it('marks the login for an unknown user and stays on the page', async () => {
       signUpTester();
       renderPage();
       fill('Login', 'nobody');
@@ -216,14 +215,14 @@ describe('ProfileCreate', () => {
 
       submit('Sign in');
 
-      expect(alertText()).toBe('User not found');
+      expect(await awaitedAlertText()).toBe('User not found');
       expect(isInvalid('Login')).toBe(true);
       expect(isInvalid('Password')).toBe(false);
       expect(currentRoute()).toBe('/profile/create');
       expect(loadSession()).toBeNull();
     });
 
-    it('marks the password when it is wrong', () => {
+    it('marks the password when it is wrong', async () => {
       signUpTester();
       renderPage();
       fill('Login', 'tester');
@@ -231,7 +230,7 @@ describe('ProfileCreate', () => {
 
       submit('Sign in');
 
-      expect(alertText()).toBe('Wrong password');
+      expect(await awaitedAlertText()).toBe('Wrong password');
       expect(isInvalid('Password')).toBe(true);
       expect(isInvalid('Login')).toBe(false);
       expect(loadSession()).toBeNull();
@@ -250,11 +249,11 @@ describe('ProfileCreate', () => {
 
       expect(await screen.findByRole('heading', { name: 'Tic Tac Toe' })).toBeTruthy();
       expect(currentRoute()).toBe('/tictactoe');
-      expect(storedUsers()?.newcomer).toMatchObject({ login: 'newcomer', name: 'Newcomer' });
+      expect(storedUsers().newcomer).toMatchObject({ login: 'newcomer', name: 'Newcomer' });
       expect(loadSession()?.login).toBe('newcomer');
     });
 
-    it('refuses a login that is already taken', () => {
+    it('refuses a login that is already taken', async () => {
       signUpTester();
       renderPage();
       fireEvent.click(tab('Register'));
@@ -264,17 +263,54 @@ describe('ProfileCreate', () => {
 
       submit('Create profile');
 
-      expect(alertText()).toBe('User with this login already exists');
+      expect(await awaitedAlertText()).toBe('User with this login already exists');
       expect(isInvalid('Login')).toBe(true);
-      expect(storedUsers()?.tester.name).toBe('Tester');
+      expect(storedUsers().tester).toMatchObject({ name: 'Tester' });
       expect(currentRoute()).toBe('/profile/create');
+    });
+
+    it('says it is working and ignores another submit until the answer comes', async () => {
+      renderPage();
+      fireEvent.click(tab('Register'));
+      fill('Login', 'newcomer');
+      fill('Display name', 'Newcomer');
+      fill('Password', 'secret');
+      const form = getElement(document.body, '.profile-create__form');
+
+      fireEvent.submit(form);
+      fireEvent.submit(form);
+
+      const button = ofType(screen.getByRole('button', { name: 'Creating profile…' }), HTMLButtonElement);
+      expect(button.disabled).toBe(true);
+      expect(await screen.findByRole('heading', { name: 'Tic Tac Toe' })).toBeTruthy();
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(Object.keys(storedUsers())).toEqual(['newcomer']);
+    });
+
+    it('says the profile could not be created when the storage is full, and lets the player try again', async () => {
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+      });
+      renderPage();
+      fireEvent.click(tab('Register'));
+      fill('Login', 'newcomer');
+      fill('Display name', 'Newcomer');
+      fill('Password', 'secret');
+
+      submit('Create profile');
+
+      expect(await awaitedAlertText()).toBe(SAVE_ERROR);
+      expect(currentRoute()).toBe('/profile/create');
+      expect(ofType(screen.getByRole('button', { name: 'Create profile' }), HTMLButtonElement).disabled).toBe(false);
+      expect(loadSession()).toBeNull();
     });
   });
 
   it('says that profiles stay on this device and claims nothing more', () => {
     renderPage();
 
-    expect(screen.getByText('Profiles and statistics are stored on this device.')).toBeTruthy();
-    expect(document.body.textContent).not.toMatch(/secure|cloud|encrypt|online/i);
+    expect(screen.getByText('Profiles and statistics are stored on this device. This is a local profile, not an online account.')).toBeTruthy();
+    const claims = document.body.textContent?.replace('not an online account', '') ?? '';
+    expect(claims).not.toMatch(/secure|cloud|encrypt|online/i);
   });
 });

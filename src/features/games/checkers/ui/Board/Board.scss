@@ -48,6 +48,16 @@
         border: max(3px, calc(var(--cell-size) * 0.055)) solid var(--board-capture);
         border-radius: 50%;
       }
+
+      // The square of the checker picked up by a tap or a drag: shaded like the move hints, with a ring
+      // that stands out on both square colours.
+      &.selected::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-color: var(--board-hint);
+        box-shadow: inset 0 0 0 max(2px, calc(var(--cell-size) * 0.04)) var(--board-selected-ring);
+      }
     }
   }
 

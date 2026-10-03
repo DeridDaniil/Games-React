@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import type { Dispatch } from "react";
 import type { CheckersAction, CheckersState } from "./types";
 
-export interface CheckersContextValue {
+interface CheckersContextValue {
   checkersState: CheckersState;
   dispatch: Dispatch<CheckersAction>;
 }

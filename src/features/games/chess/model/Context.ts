@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import type { Dispatch } from "react";
 import type { ChessAction, ChessState } from "./types";
 
-export interface ChessContextValue {
+interface ChessContextValue {
   chessState: ChessState;
   dispatch: Dispatch<ChessAction>;
 }

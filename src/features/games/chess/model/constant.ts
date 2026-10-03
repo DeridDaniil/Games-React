@@ -8,6 +8,7 @@ export const DEFAULT_TIME_CONTROL_MS = 5 * 60 * 1000;
 export const initChessGame: ChessState = {
   position: [createPosition()],
   turn: 'white',
+  selected: null,
   candidateMoves: [],
   movesList: [],
   clockStarted: false,

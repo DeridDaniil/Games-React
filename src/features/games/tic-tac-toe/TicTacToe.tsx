@@ -9,6 +9,7 @@ import TicTacToeSettings from './ui/Settings/TicTacToeSettings';
 import GameHeader from '../shared/ui/GameHeader/GameHeader';
 import Button from '../../../shared/ui/Button/Button';
 import type { BoardSize, Cell, Difficulty, Mark, TicTacToeSettings as Settings } from './model/types';
+import type { ResultType } from '../../profile/model/types';
 import './TicTacToe.scss';
 
 const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'Easy', medium: 'Medium', unbeatable: 'Unbeatable' };
@@ -34,6 +35,7 @@ function TicTacToeGame({ settings }: { settings: Settings }) {
   const [activeCell, setActiveCell] = useState(0);
   const { recordResult } = useProfile();
   const recordedGameRef = useRef<number | null>(null);
+  const [saveError, setSaveError] = useState<{ gameId: number; message: string } | null>(null);
   const cellRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const { id: gameId, cells } = game;
@@ -50,17 +52,21 @@ function TicTacToeGame({ settings }: { settings: Settings }) {
   const isAITurn = mode === 'computer' && currentMark === aiMark && !isGameEnd;
 
   // Each finished game is recorded once; friend mode keeps the stats from X's side (current behaviour).
+  // A result the profile could not store is announced until the next game.
   useEffect(() => {
     if (!isGameEnd || recordedGameRef.current === gameId) return;
     recordedGameRef.current = gameId;
 
+    let result: ResultType;
     if (isDraw) {
-      recordResult('tictactoe', 'draws');
+      result = 'draws';
     } else if (mode === 'computer') {
-      recordResult('tictactoe', winner === humanMark ? 'wins' : 'losses');
+      result = winner === humanMark ? 'wins' : 'losses';
     } else {
-      recordResult('tictactoe', winner === 'X' ? 'wins' : 'losses');
+      result = winner === 'X' ? 'wins' : 'losses';
     }
+    const saved = recordResult('tictactoe', result);
+    if (!saved.ok) setSaveError({ gameId, message: saved.error });
   }, [isGameEnd, isDraw, winner, gameId, mode, humanMark, recordResult]);
 
   // The computer answers after a short pause. A move, a restart or leaving the page cancels the
@@ -155,6 +161,7 @@ function TicTacToeGame({ settings }: { settings: Settings }) {
         </p>
         <Button className="tictactoe__restart" icon={<RotateCcw />} onClick={restartGame}>Restart</Button>
       </div>
+      {saveError?.gameId === gameId && <p className="tictactoe__save-error" role="alert">{saveError.message}</p>}
     </div>
   );
 }

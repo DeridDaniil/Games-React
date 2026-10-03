@@ -9,6 +9,7 @@ import {
   markResultRecorded,
   setupNewGame,
   startClock,
+  surrender,
   tickClock
 } from './actions/game';
 import { DEFAULT_TIME_CONTROL_MS, initChessGame } from './constant';
@@ -224,7 +225,7 @@ describe('ChessReducer', () => {
       const afterE4 = playMoves(initChessGame, [['e2', 'e4']]);
       const promoting = reduce(
         afterE4,
-        generateCandidateMoves({ candidateMoves: [[0, 0]] }),
+        generateCandidateMoves({ candidateMoves: [[0, 0]], from: [1, 0] }),
         openPromotion({ axisY: 1, axisX: 0, y: 0, x: 0 })
       );
 
@@ -357,7 +358,7 @@ describe('ChessReducer', () => {
     it('TICK running out during a promotion ends the game and drops the pending promotion', () => {
       const promoting = reduce(
         { ...initChessGame, whiteTime: 500 },
-        generateCandidateMoves({ candidateMoves: [[7, 0]] }),
+        generateCandidateMoves({ candidateMoves: [[7, 0]], from: [6, 0] }),
         openPromotion({ axisY: 6, axisX: 0, y: 7, x: 0 })
       );
 
@@ -369,12 +370,13 @@ describe('ChessReducer', () => {
     });
 
     it('TIMEOUT ends the game and clears the highlighted moves', () => {
-      const highlighted = ChessReducer(initChessGame, generateCandidateMoves({ candidateMoves: [[2, 4]] }));
+      const highlighted = ChessReducer(initChessGame, generateCandidateMoves({ candidateMoves: [[2, 4]], from: [1, 4] }));
 
       const state = ChessReducer(highlighted, { type: ActionTypes.TIMEOUT, payload: 'white' });
 
       expect(state.status).toBe(Status.blackOnTime);
       expect(state.candidateMoves).toEqual([]);
+      expect(state.selected).toBeNull();
     });
 
     it('TICK is ignored once the game is over', () => {
@@ -385,9 +387,53 @@ describe('ChessReducer', () => {
 
   describe('candidate moves', () => {
     it('stores and clears the highlighted moves', () => {
-      const withCandidates = ChessReducer(initChessGame, generateCandidateMoves({ candidateMoves: [[2, 4], [3, 4]] }));
+      const withCandidates = ChessReducer(initChessGame, generateCandidateMoves({ candidateMoves: [[2, 4], [3, 4]], from: [1, 4] }));
       expect(withCandidates.candidateMoves).toEqual([[2, 4], [3, 4]]);
-      expect(ChessReducer(withCandidates, clearCandidates()).candidateMoves).toEqual([]);
+      expect(withCandidates.selected).toEqual([1, 4]);
+
+      const cleared = ChessReducer(withCandidates, clearCandidates());
+      expect(cleared.candidateMoves).toEqual([]);
+      expect(cleared.selected).toBeNull();
+    });
+
+    it('Take Back drops the picked-up piece with its highlights', () => {
+      const afterE4 = playMoves(initChessGame, [['e2', 'e4']]);
+      const picked = ChessReducer(afterE4, generateCandidateMoves({ candidateMoves: [[4, 4]], from: [6, 4] }));
+
+      const state = ChessReducer(picked, takeBack());
+
+      expect(state.selected).toBeNull();
+      expect(state.candidateMoves).toEqual([]);
+    });
+  });
+
+  describe('SURRENDER', () => {
+    it('ends a game in play against the side to move', () => {
+      expect(ChessReducer(initChessGame, surrender()).status).toBe(Status.whiteSurrender);
+
+      const afterE4 = playMoves(initChessGame, [['e2', 'e4']]);
+      expect(ChessReducer(afterE4, surrender()).status).toBe(Status.blackSurrender);
+    });
+
+    it('drops a pending promotion choice and the highlights', () => {
+      const promoting = reduce(
+        initChessGame,
+        generateCandidateMoves({ candidateMoves: [[7, 0]], from: [6, 0] }),
+        openPromotion({ axisY: 6, axisX: 0, y: 7, x: 0 })
+      );
+
+      const state = ChessReducer(promoting, surrender());
+
+      expect(state.status).toBe(Status.whiteSurrender);
+      expect(state.promotionSquare).toBeNull();
+      expect(state.candidateMoves).toEqual([]);
+      expect(state.selected).toBeNull();
+    });
+
+    it('is ignored once the game is over', () => {
+      const finished = ChessReducer(initChessGame, { type: ActionTypes.TIMEOUT, payload: 'black' });
+
+      expect(ChessReducer(finished, surrender())).toBe(finished);
     });
   });
 

@@ -4,7 +4,8 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import ProfilePage from './ProfilePage';
 import { ProfileProvider } from '../../model/ProfileProvider';
-import { loadSession, register, saveProfile } from '../../lib/profileStorage';
+import { SAVE_ERROR, loadSession, saveProfile } from '../../lib/profileStorage';
+import { storeProfile } from '../../test/profileFixtures';
 import { defaultAvatar, resizeImage } from '../../lib/avatar';
 import { getElement, ofType } from '../../../../shared/test/dom';
 
@@ -50,14 +51,20 @@ const storedProfile = () => {
   return profile;
 };
 
+// Every localStorage write fails from now on, the way it does when the storage is full.
+const fillStorage = () => vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+  throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+});
+
 beforeEach(() => {
   localStorage.clear();
-  register('tester', 'Tester', 'secret');
+  storeProfile();
   saveProfile({ ...storedProfile(), stats: STATS });
   vi.mocked(resizeImage).mockReset();
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   localStorage.clear();
 });
 
@@ -166,6 +173,28 @@ describe('ProfilePage', () => {
       expect(resizeImage).toHaveBeenCalledTimes(1);
       fireEvent.click(button('Save'));
 
+      expect(headerAvatar(container)).toBe(PHOTO);
+      expect(loadSession()?.avatar).toBe(PHOTO);
+    });
+
+    it('says the photo could not be saved when the storage is full, keeping the form and the stored profile', async () => {
+      vi.mocked(resizeImage).mockResolvedValue(PHOTO);
+      const { container } = renderProfile();
+      fireEvent.click(button('Edit profile'));
+      fireEvent.change(fileInput(container), { target: { files: [imageFile()] } });
+      await waitFor(() => expect(editAvatar(container)).toBe(PHOTO));
+      const storageFull = fillStorage();
+
+      fireEvent.click(button('Save'));
+
+      expect(screen.getByRole('alert').textContent).toBe(SAVE_ERROR);
+      expect(screen.getByRole('heading', { level: 1, name: 'Edit profile' })).toBeTruthy();
+      expect(editAvatar(container)).toBe(PHOTO);
+      storageFull.mockRestore();
+      expect(loadSession()?.avatar).toBe(defaultAvatar);
+
+      // Once there is room again, the same Save goes through.
+      fireEvent.click(button('Save'));
       expect(headerAvatar(container)).toBe(PHOTO);
       expect(loadSession()?.avatar).toBe(PHOTO);
     });
@@ -310,6 +339,20 @@ describe('ProfilePage', () => {
       expect(countsOf('Tic Tac Toe')).toBe('20 games · 12 wins · 5 losses · 3 draws');
       expect(overviewValue('Games')).toBe('20');
       expect(loadSession()?.stats).toEqual({ ...STATS, chess: { wins: 0, losses: 0, draws: 0 } });
+    });
+
+    it('says when a reset could not be stored and keeps the results', async () => {
+      renderProfile();
+      const dialog = openReset('Chess');
+      fillStorage();
+
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Reset' }));
+
+      await waitForDialogToClose();
+      expect(screen.getByRole('alert').textContent).toBe(SAVE_ERROR);
+      expect(countsOf('Chess')).toBe('3 games · 1 win · 2 losses · 0 draws');
+      vi.restoreAllMocks();
+      expect(loadSession()?.stats.chess).toEqual(STATS.chess);
     });
   });
 

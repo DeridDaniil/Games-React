@@ -5,12 +5,13 @@ import TicTacToe from './TicTacToe';
 import TicTacToeSettings from './ui/Settings/TicTacToeSettings';
 import { TicTacToeSettingsProvider } from './model/TicTacToeSettingsProvider';
 import { ProfileProvider } from '../../profile/model/ProfileProvider';
-import { loadSession, register } from '../../profile/lib/profileStorage';
+import { SAVE_ERROR, loadSession } from '../../profile/lib/profileStorage';
+import { storeProfile } from '../../profile/test/profileFixtures';
 import { ofType } from '../../../shared/test/dom';
 
 beforeEach(() => {
   localStorage.clear();
-  register('tester', 'Tester', 'secret');
+  storeProfile();
 });
 
 afterEach(() => {
@@ -102,6 +103,24 @@ describe('TicTacToe (friend mode)', () => {
 
     expect(screen.getByText('Winner — O')).toBeTruthy();
     expect(tictactoeStats()).toEqual({ wins: 0, losses: 1, draws: 0 });
+  });
+
+  // The game still ends as usual; the player is told its result is not stored, until the next game.
+  it('says so when the result cannot be stored, until a new game starts', () => {
+    const { play, restart } = renderGame();
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+    });
+
+    play(0, 3, 1, 4, 2);
+
+    expect(screen.getByText('Winner — X')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(SAVE_ERROR);
+    expect(tictactoeStats()).toEqual({ wins: 0, losses: 0, draws: 0 });
+
+    restart();
+
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('starts a fresh game on restart', () => {
@@ -261,9 +280,27 @@ describe('TicTacToe settings', () => {
 
     game.choose('vs Friend');
     game.choose('3x3');
-    game.choose('X (first)');
 
     expect(game.marks()).toBe('X...O....');
+  });
+
+  it('shows Your Side only against the computer and keeps the side chosen there', () => {
+    const game = renderGame({ withSettings: true });
+    const side = (label: string) => screen.getByRole('button', { name: label }).getAttribute('aria-pressed');
+
+    expect(screen.queryByText('Your Side')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'X (first)' })).toBeNull();
+
+    game.choose('vs Computer');
+    expect(screen.getByText('Your Side')).toBeTruthy();
+    game.choose('O (second)');
+
+    game.choose('vs Friend');
+    expect(screen.queryByText('Your Side')).toBeNull();
+
+    game.choose('vs Computer');
+    expect(side('O (second)')).toBe('true');
+    expect(side('X (first)')).toBe('false');
   });
 
   it('starts a new game when a different option is chosen', () => {
@@ -338,7 +375,8 @@ describe('TicTacToe keyboard navigation', () => {
     const game = renderGame();
     game.play(0);
     const cells = game.cells();
-    cells[1].focus();
+    // Focusing another cell moves the roving tab stop (a state update), so it happens inside act.
+    act(() => { cells[1].focus(); });
 
     key(cells[1], 'ArrowLeft');
     fireEvent.click(cells[0]);

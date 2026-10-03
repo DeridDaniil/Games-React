@@ -101,6 +101,13 @@
   margin-left: auto;
 }
 
+// Said under the result when the profile could not store it.
+.tictactoe__save-error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
 @keyframes ttt-mark-in {
   from {
     opacity: 0;

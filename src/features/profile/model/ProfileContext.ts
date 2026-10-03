@@ -1,16 +1,18 @@
 import { createContext, useContext } from 'react';
-import type { AuthResult, GameId, Profile, ProfileChanges, ResultType } from './types';
+import type { AuthResult, GameId, Profile, ProfileChanges, ResultType, SaveResult } from './types';
 
-export interface ProfileContextValue {
+// Registering and signing in check the password (Web Crypto), so they finish later. The changes are
+// stored at once and say whether that worked; the profile only shows a change once it is stored.
+interface ProfileContextValue {
   profile: Profile | null;
   hasProfile: boolean;
-  register: (login: string, name: string, password: string) => AuthResult;
-  login: (login: string, password: string) => AuthResult;
+  register: (login: string, name: string, password: string) => Promise<AuthResult>;
+  login: (login: string, password: string) => Promise<AuthResult>;
   logout: () => void;
-  updateProfile: (changes: ProfileChanges) => void;
-  recordResult: (game: GameId, result: ResultType) => void;
+  updateProfile: (changes: ProfileChanges) => SaveResult;
+  recordResult: (game: GameId, result: ResultType) => SaveResult;
   // Without a game, every game is reset.
-  resetStats: (game?: GameId) => void;
+  resetStats: (game?: GameId) => SaveResult;
 }
 
 // Provided by ProfileProvider; there is no profile API outside of it.

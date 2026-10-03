@@ -31,6 +31,9 @@ function Board() {
 
     if (isChecked && isChecked[0] === y && isChecked[1] === x) style += ' checked';
 
+    const { selected } = chessState;
+    if (selected && selected[0] === y && selected[1] === x) style += ' selected';
+
     return style;
   }
 

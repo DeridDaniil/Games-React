@@ -7,7 +7,7 @@ const DRAG_DATA = /^([0-7]), ([0-7]), ((?:white|black)-(?:checker|queen))$/;
 // "white-queen" → "white".
 export const colorOf = (piece: CheckerPiece): PlayerColor => (piece.startsWith('white') ? 'white' : 'black');
 
-export interface DraggedChecker {
+interface DraggedChecker {
   axisY: number;
   axisX: number;
   checker: CheckerPiece;

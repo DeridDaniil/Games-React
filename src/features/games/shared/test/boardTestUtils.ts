@@ -16,12 +16,12 @@ export const at = (square: string) => {
   return { axisY, axisX };
 };
 
-export const toSquare = ([y, x]: Square) => `${FILES[x]}${y + 1}`;
+const toSquare = ([y, x]: Square) => `${FILES[x]}${y + 1}`;
 
 export const toSquares = (moves: readonly Square[]) => moves.map(toSquare).sort();
 
 // A board of the given game's cells (pieces or '' for an empty square).
-export const emptyBoard = <Piece extends string = never>(): (Piece | '')[][] =>
+const emptyBoard = <Piece extends string = never>(): (Piece | '')[][] =>
   Array.from({ length: 8 }, () => Array<Piece | ''>(8).fill(''));
 
 export const boardWith = <Piece extends string>(pieces: Readonly<Record<string, Piece>>) => {

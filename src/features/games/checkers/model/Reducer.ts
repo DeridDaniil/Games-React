@@ -57,6 +57,7 @@ export const CheckersReducer = (state: CheckersState, action: CheckersAction): C
     case ActionTypes.GENERATE_CANDIDATE_MOVES: {
       return {
         ...state,
+        selected: action.payload.from,
         candidateMoves: action.payload.candidateMoves
       }
     }
@@ -71,6 +72,7 @@ export const CheckersReducer = (state: CheckersState, action: CheckersAction): C
     case ActionTypes.CLEAR_CANDIDATE: {
       return {
         ...state,
+        selected: null,
         candidateMoves: [],
         candidateAttack: []
       }
@@ -107,6 +109,7 @@ export const CheckersReducer = (state: CheckersState, action: CheckersAction): C
           chain: null,
           chainCapturePiece: null,
           forcedCapturePieces: [],
+          selected: null,
           candidateMoves: [],
           candidateAttack: [],
           clockStarted: position.length > 1,
@@ -138,6 +141,7 @@ export const CheckersReducer = (state: CheckersState, action: CheckersAction): C
           status: Status.ongoing,
           chainCapturePiece: null,
           forcedCapturePieces: [],
+          selected: null,
           candidateMoves: [],
           candidateAttack: [],
           clockStarted: position.length > 1,
@@ -177,7 +181,10 @@ export const CheckersReducer = (state: CheckersState, action: CheckersAction): C
           ...state,
           whiteTime: loser === 'white' ? 0 : state.whiteTime,
           blackTime: loser === 'black' ? 0 : state.blackTime,
-          status: winner === 'white' ? Status.whiteOnTime : Status.blackOnTime
+          status: winner === 'white' ? Status.whiteOnTime : Status.blackOnTime,
+          selected: null,
+          candidateMoves: [],
+          candidateAttack: []
         };
       }
 
@@ -190,10 +197,14 @@ export const CheckersReducer = (state: CheckersState, action: CheckersAction): C
     case ActionTypes.SURRENDER: {
       if (state.status !== Status.ongoing) return state;
 
+      // A selected checker and its highlights go with the game, as when time runs out.
       const loser = state.turn;
       return {
         ...state,
-        status: loser === 'white' ? Status.whiteSurrender : Status.blackSurrender
+        status: loser === 'white' ? Status.whiteSurrender : Status.blackSurrender,
+        selected: null,
+        candidateMoves: [],
+        candidateAttack: []
       };
     }
   }

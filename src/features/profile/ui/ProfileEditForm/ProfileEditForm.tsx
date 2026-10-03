@@ -4,7 +4,7 @@ import { ImagePlus, Trash2 } from 'lucide-react';
 import Button from '../../../../shared/ui/Button/Button';
 import FormField from '../../../../shared/ui/FormField/FormField';
 import { defaultAvatar, isDefaultAvatar, resizeImage } from '../../lib/avatar';
-import type { Profile } from '../../model/types';
+import type { Profile, SaveResult } from '../../model/types';
 import './ProfileEditForm.scss';
 
 const PHOTO_ERRORS = {
@@ -16,7 +16,8 @@ type EditableProfile = Pick<Profile, 'name' | 'avatar'>;
 
 interface ProfileEditFormProps {
   profile: EditableProfile;
-  onSave: (changes: EditableProfile) => void;
+  // Whether the changes were stored; if not, the form stays open with them so Save can be tried again.
+  onSave: (changes: EditableProfile) => SaveResult;
   onCancel: () => void;
 }
 
@@ -25,6 +26,8 @@ function ProfileEditForm({ profile, onSave, onCancel }: ProfileEditFormProps) {
   const [name, setName] = useState(profile.name);
   const [avatar, setAvatar] = useState(profile.avatar);
   const [photoError, setPhotoError] = useState<{ message: string; key: number } | null>(null);
+  const [saveError, setSaveError] = useState<{ message: string; key: number } | null>(null);
+  const saveAttemptRef = useRef(0);
   const [isReadingPhoto, setIsReadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   // Counts photo choices (picks and removals): a resize that finishes after a newer choice is dropped.
@@ -76,7 +79,10 @@ function ProfileEditForm({ profile, onSave, onCancel }: ProfileEditFormProps) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!trimmedName || isReadingPhoto) return;
-    onSave({ name: trimmedName, avatar });
+    const result = onSave({ name: trimmedName, avatar });
+    // Each failed attempt mounts a fresh alert, so the message is announced again.
+    saveAttemptRef.current += 1;
+    setSaveError(result.ok ? null : { message: result.error, key: saveAttemptRef.current });
   };
 
   return (
@@ -125,6 +131,10 @@ function ProfileEditForm({ profile, onSave, onCancel }: ProfileEditFormProps) {
         />
         {!trimmedName && <p id="profile-name-error" className="profile-edit__error">Enter a display name.</p>}
       </div>
+
+      {saveError && (
+        <p key={saveError.key} className="profile-edit__error" role="alert">{saveError.message}</p>
+      )}
 
       <div className="profile-edit__actions">
         <Button type="submit" variant="primary" disabled={!trimmedName || isReadingPhoto}>Save</Button>

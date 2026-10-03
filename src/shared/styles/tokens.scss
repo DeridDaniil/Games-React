@@ -50,6 +50,8 @@
   --board-coord-on-light: #524a42;
   --board-coord-on-dark: #080808;
   --board-hint: rgba(18, 20, 20, 0.3);
+  // The page's charcoal around a selected square: 3.4:1 against dark squares, 8.7:1 against light ones.
+  --board-selected-ring: var(--color-bg);
   --board-capture: rgba(212, 138, 110, 0.9);
   --board-check: rgba(212, 120, 96, 0.45);
   --board-check-ring: rgba(224, 136, 108, 0.9);

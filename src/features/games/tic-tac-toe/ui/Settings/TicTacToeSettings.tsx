@@ -80,27 +80,30 @@ function TicTacToeSettings() {
         </div>
       </fieldset>
 
-      <fieldset className="ttt-settings__group">
-        <legend className="ttt-settings__label">Your Side</legend>
-        <div className="ttt-settings__options">
-          <button
-            type="button"
-            className="ttt-settings__option"
-            aria-pressed={settings.playerSide === 'X'}
-            onClick={() => updateSettings({ playerSide: 'X' })}
-          >
-            X (first)
-          </button>
-          <button
-            type="button"
-            className="ttt-settings__option"
-            aria-pressed={settings.playerSide === 'O'}
-            onClick={() => updateSettings({ playerSide: 'O' })}
-          >
-            O (second)
-          </button>
-        </div>
-      </fieldset>
+      {/* Only a game against the computer has a side of one's own; the choice is kept for the next one. */}
+      {settings.mode === 'computer' && (
+        <fieldset className="ttt-settings__group">
+          <legend className="ttt-settings__label">Your Side</legend>
+          <div className="ttt-settings__options">
+            <button
+              type="button"
+              className="ttt-settings__option"
+              aria-pressed={settings.playerSide === 'X'}
+              onClick={() => updateSettings({ playerSide: 'X' })}
+            >
+              X (first)
+            </button>
+            <button
+              type="button"
+              className="ttt-settings__option"
+              aria-pressed={settings.playerSide === 'O'}
+              onClick={() => updateSettings({ playerSide: 'O' })}
+            >
+              O (second)
+            </button>
+          </div>
+        </fieldset>
+      )}
 
       <p className="ttt-settings__hint">Choosing a different option starts a new game.</p>
     </div>

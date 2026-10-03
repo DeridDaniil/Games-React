@@ -10,7 +10,7 @@ import './Modal.scss';
 // (The base it already has is restated so the merged declaration keeps using its parameter.)
 declare module 'react' {
   interface HTMLAttributes<T> extends DOMAttributes<T> {
-    inert?: '';
+    inert?: '' | undefined;
   }
 }
 

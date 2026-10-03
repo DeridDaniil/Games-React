@@ -14,7 +14,7 @@ interface NotationCase {
 const notation = ({ position, figure, from, to, promotesTo }: NotationCase) => {
   const [axisY, axisX] = sq(from);
   const [y, x] = sq(to);
-  return getNewMoveNotation({ position, figure, axisY, axisX, y, x, promotesTo });
+  return getNewMoveNotation({ position, figure, axisY, axisX, y, x, ...(promotesTo ? { promotesTo } : {}) });
 };
 
 describe('createPosition', () => {

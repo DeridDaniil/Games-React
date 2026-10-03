@@ -121,16 +121,18 @@ describe('CheckersReducer', () => {
     it('stores candidate moves and attacks and clears both at once', () => {
       const withCandidates = reduce(
         initCheckersGame,
-        generateCandidateMoves({ candidateMoves: [sq('e5')] }),
+        generateCandidateMoves({ candidateMoves: [sq('e5')], from: sq('c3') }),
         generateCandidateAttack({ candidateAttack: [sq('d4')] })
       );
 
       expect(withCandidates.candidateMoves).toEqual([sq('e5')]);
       expect(withCandidates.candidateAttack).toEqual([sq('d4')]);
+      expect(withCandidates.selected).toEqual(sq('c3'));
 
       const cleared = CheckersReducer(withCandidates, clearCandidates());
       expect(cleared.candidateMoves).toEqual([]);
       expect(cleared.candidateAttack).toEqual([]);
+      expect(cleared.selected).toBeNull();
     });
   });
 
@@ -237,7 +239,7 @@ describe('CheckersReducer', () => {
       const highlighted = reduce(
         initCheckersGame,
         whiteMove,
-        generateCandidateMoves({ candidateMoves: [sq('a5')] }),
+        generateCandidateMoves({ candidateMoves: [sq('a5')], from: sq('b6') }),
         generateCandidateAttack({ candidateAttack: [sq('b4')] })
       );
 
@@ -245,6 +247,7 @@ describe('CheckersReducer', () => {
 
       expect(state.candidateMoves).toEqual([]);
       expect(state.candidateAttack).toEqual([]);
+      expect(state.selected).toBeNull();
     });
 
     it('lets the chain be played again after it was taken back', () => {
@@ -272,6 +275,23 @@ describe('CheckersReducer', () => {
       expect(initCheckersGame.resultRecorded).toBe(false);
       expect(recorded.resultRecorded).toBe(true);
       expect(CheckersReducer(recorded, setupNewGame(initCheckersGame)).resultRecorded).toBe(false);
+    });
+
+    // A checker selected by a tap stays selected until something drops it; the end of the game does.
+    it.each([
+      ['a surrender', (state: CheckersState) => CheckersReducer(state, surrender())],
+      ['running out of time', (state: CheckersState) => CheckersReducer({ ...state, whiteTime: 400 }, tickClock(1000))],
+    ])('%s drops the selected checker and its highlights', (_, end) => {
+      const selected = reduce(
+        initCheckersGame,
+        generateCandidateMoves({ candidateMoves: [sq('d4')], from: sq('c3') }),
+        generateCandidateAttack({ candidateAttack: [sq('e5')] })
+      );
+
+      const ended = end(selected);
+
+      expect(ended.status).not.toBe(Status.ongoing);
+      expect(ended).toMatchObject({ selected: null, candidateMoves: [], candidateAttack: [] });
     });
 
     it('SURRENDER is ignored once the game is already over', () => {

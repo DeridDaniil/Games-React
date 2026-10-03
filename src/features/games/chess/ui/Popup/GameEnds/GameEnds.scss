@@ -42,6 +42,11 @@
     }
   }
 
+  // Said under the result when the profile could not store it.
+  .game_ends--error {
+    color: var(--color-danger);
+  }
+
   .button {
     margin-top: var(--space-3);
   }

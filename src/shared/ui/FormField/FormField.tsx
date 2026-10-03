@@ -4,9 +4,9 @@ import './FormField.scss';
 type FormFieldProps = ComponentPropsWithoutRef<'input'> & {
   id: string;
   label: string;
-  hint?: string;
-  invalid?: boolean;
-  describedBy?: string;
+  hint?: string | undefined;
+  invalid?: boolean | undefined;
+  describedBy?: string | undefined;
 };
 
 // A labelled text input with an optional hint under it. `invalid` marks the value as wrong for

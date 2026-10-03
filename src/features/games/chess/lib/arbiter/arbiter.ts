@@ -3,7 +3,7 @@ import { getFigures, getPawnCaptures, getRegularMoves } from "./getMoves"
 import { getCastlingMoves } from "./castling";
 import { isPlayerInCheck } from "./check";
 import { performMove } from "./move";
-import type { CastlingRights, ChessCell, ChessPiece, ChessPosition } from "../../model/types";
+import type { CastlingRights, ChessPiece, ChessPosition } from "../../model/types";
 import type { PlayerColor, Square } from "../../../shared/model/types";
 
 // The rules of the game on top of the move generators (getMoves, castling), the board update
@@ -12,7 +12,7 @@ import type { PlayerColor, Square } from "../../../shared/model/types";
 interface ValidMovesQuery {
   position: ChessPosition;
   // The position before the last move; without it en passant is not seen.
-  prevPosition?: ChessPosition;
+  prevPosition?: ChessPosition | undefined;
   castleDirection: CastlingRights;
   figure: ChessPiece;
   axisY: number;
@@ -71,24 +71,18 @@ const isStalemate = (position: ChessPosition, player: PlayerColor, castleDirecti
   return (!isInCheck && moves.length === 0);
 }
 
+// Material with which neither side can ever checkmate: the kings alone, a king and one bishop or
+// knight against a bare king, and kings with bishops only, every bishop on squares of one colour
+// (K+B against K+B, K+B+B against K, ...). Other dead positions are not looked for.
 const insufficientMaterial = (position: ChessPosition): boolean => {
-  const figures = position.reduce<ChessCell[]>((acc, axisY) => acc = [
-    ...acc,
-    ...axisY.filter(axisX => axisX)
-  ], []);
+  const figures = position.flat().filter((cell): cell is ChessPiece => cell !== '');
 
   if (figures.length === 2) return true;
-  if (figures.length === 3 && (figures.some(f => f.slice(6) === 'bishop' || f.slice(6) === 'knight'))) return true;
-  if (figures.length === 4 &&
-    figures.every(f => f.slice(6) === 'bishop' || f.slice(6) === 'king') &&
-    new Set(figures).size === 4 &&
-    areSameColorTiles(
-      findFiguresCoords(position, 'white-bishop')[0],
-      findFiguresCoords(position, 'black-bishop')[0]
-    )
-  ) return true;
+  if (figures.length === 3 && figures.some(f => pieceType(f) === 'bishop' || pieceType(f) === 'knight')) return true;
 
-  return false;
+  const bishops = [...findFiguresCoords(position, 'white-bishop'), ...findFiguresCoords(position, 'black-bishop')];
+  const kingsAndBishopsOnly = figures.every(f => pieceType(f) === 'king' || pieceType(f) === 'bishop');
+  return kingsAndBishopsOnly && bishops.length > 0 && bishops.every(bishop => areSameColorTiles(bishop, bishops[0]));
 }
 
 const isCheckmate = (position: ChessPosition, player: PlayerColor, castleDirection: CastlingRights, prevPosition?: ChessPosition): boolean => {

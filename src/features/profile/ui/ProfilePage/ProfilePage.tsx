@@ -6,7 +6,7 @@ import { countOf, summarizeAll } from '../../lib/stats';
 import Button from '../../../../shared/ui/Button/Button';
 import ProfileEditForm from '../ProfileEditForm/ProfileEditForm';
 import GameStats from '../GameStats/GameStats';
-import type { ProfileChanges } from '../../model/types';
+import type { GameId, ProfileChanges } from '../../model/types';
 import './ProfilePage.scss';
 
 const OVERVIEW: readonly { key: keyof ReturnType<typeof summarizeAll>; label: string }[] = [
@@ -21,6 +21,7 @@ function ProfilePage() {
   const { profile, updateProfile, resetStats, logout } = useProfile();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
   const editButtonId = useId();
   const wasEditingRef = useRef(false);
 
@@ -34,9 +35,16 @@ function ProfilePage() {
 
   const totals = summarizeAll(profile.stats);
 
+  // Edit mode only closes once the changes are stored; otherwise the form says why and keeps them.
   const handleSave = (changes: ProfileChanges) => {
-    updateProfile(changes);
-    setIsEditing(false);
+    const result = updateProfile(changes);
+    if (result.ok) setIsEditing(false);
+    return result;
+  };
+
+  const handleReset = (game: GameId) => {
+    const result = resetStats(game);
+    setResetError(result.ok ? null : result.error);
   };
 
   const handleLogout = () => {
@@ -88,7 +96,8 @@ function ProfilePage() {
           Against the computer the result is yours. When two people share the screen, it counts for White
           in Chess and Checkers and for X in Tic Tac Toe.
         </p>
-        <GameStats stats={profile.stats} onReset={resetStats} />
+        <GameStats stats={profile.stats} onReset={handleReset} />
+        {resetError && <p className="profile-section__error" role="alert">{resetError}</p>}
       </section>
 
       <section className="profile-section" aria-labelledby="profile-account-title">

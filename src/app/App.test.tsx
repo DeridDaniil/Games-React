@@ -6,7 +6,8 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import App from './App';
 import { ProfileProvider } from '../features/profile/model/ProfileProvider';
 import { TicTacToeSettingsProvider } from '../features/games/tic-tac-toe/model/TicTacToeSettingsProvider';
-import { loadSession, register } from '../features/profile/lib/profileStorage';
+import { loadSession } from '../features/profile/lib/profileStorage';
+import { storeProfile } from '../features/profile/test/profileFixtures';
 
 // Shows where the router is, so a test can tell a redirect from a page that merely looks right.
 function LocationProbe() {
@@ -58,7 +59,7 @@ describe('App routing (smoke)', () => {
 
   describe('with a signed-in profile', () => {
     beforeEach(() => {
-      register('tester', 'Tester', 'secret');
+      storeProfile();
     });
 
     it('opens Tic-Tac-Toe', () => {
@@ -113,8 +114,7 @@ describe('App routing (smoke)', () => {
   // before the form's own navigation to /tictactoe was applied.
   describe('after signing in or registering', () => {
     it('lands on Tic-Tac-Toe after signing in', async () => {
-      register('tester', 'Tester', 'secret');
-      localStorage.removeItem('games-react-session');
+      storeProfile('tester', 'Tester', { signedIn: false });
       renderAt('/profile/create');
 
       fill('Login', 'tester');
@@ -138,8 +138,7 @@ describe('App routing (smoke)', () => {
     });
 
     it('lands on Tic-Tac-Toe when the sign-in page was opened from a game link', async () => {
-      register('tester', 'Tester', 'secret');
-      localStorage.removeItem('games-react-session');
+      storeProfile('tester', 'Tester', { signedIn: false });
       renderAt('/chess');
 
       fill('Login', 'tester');

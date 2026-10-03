@@ -62,7 +62,7 @@ export const findFiguresCoords = (position: ChessPosition, type: ChessPiece): Co
 // Drag data written by Figure.onDragStart: "<colour>-<piece>, <y>, <x>".
 const DRAG_DATA = /^((?:white|black)-(?:pawn|knight|bishop|rook|queen|king)), ([0-7]), ([0-7])$/;
 
-export interface DraggedFigure {
+interface DraggedFigure {
   figure: ChessPiece;
   axisY: number;
   axisX: number;
@@ -81,7 +81,7 @@ export const readDraggedFigure = (data: string | null | undefined, position: Che
   return { figure: piece, axisY: y, axisX: x };
 }
 
-export const PIECE_LETTERS: Record<Exclude<ChessPieceType, 'pawn'>, string> = { king: 'K', queen: 'Q', rook: 'R', bishop: 'B', knight: 'N' };
+const PIECE_LETTERS: Record<Exclude<ChessPieceType, 'pawn'>, string> = { king: 'K', queen: 'Q', rook: 'R', bishop: 'B', knight: 'N' };
 
 interface NotationInput {
   position: ChessPosition;

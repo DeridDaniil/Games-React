@@ -45,6 +45,8 @@ export interface CheckersState {
   // Every position of the game, the current one last.
   position: CheckersPosition[];
   turn: PlayerColor;
+  // The checker picked up by a drag or a tap, whose moves and captures are highlighted.
+  selected: Square | null;
   candidateMoves: Square[];
   candidateAttack: Square[];
   forcedCapturePieces: Square[];
@@ -63,7 +65,7 @@ export interface CheckersState {
 
 export type CheckersAction =
   | { type: typeof ActionTypes.NEW_MOVE; payload: { newPosition: CheckersPosition; newMove: string } }
-  | { type: typeof ActionTypes.GENERATE_CANDIDATE_MOVES; payload: { candidateMoves: Square[] } }
+  | { type: typeof ActionTypes.GENERATE_CANDIDATE_MOVES; payload: { candidateMoves: Square[]; from: Square } }
   | { type: typeof ActionTypes.GENERATE_CANDIDATE_ATTACK; payload: { candidateAttack: Square[] } }
   | { type: typeof ActionTypes.CLEAR_CANDIDATE }
   | { type: typeof ActionTypes.SET_FORCED_CAPTURES; payload: { forcedCapturePieces: Square[] } }

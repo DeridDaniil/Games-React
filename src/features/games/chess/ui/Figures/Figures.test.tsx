@@ -46,12 +46,13 @@ const pickUp = ({ position, from, turn = 'white', castleDirection = fullCastling
   const figure = pieceOn(position, from);
   const dispatch = vi.fn<Dispatch<ChessAction>>();
 
-  // Mirrors Figure.onDragStart: the engine provides the highlighted legal moves.
+  // Mirrors Figure.onDragStart: the piece is selected and the engine provides its legal moves.
   const chessState: ChessState = {
     ...initChessGame,
     position: [position],
     turn,
     castleDirection,
+    selected: [axisY, axisX],
     candidateMoves: arbiter.getValidMoves({ position, castleDirection: castleDirection[turn], figure, axisY, axisX })
   };
 
@@ -184,6 +185,16 @@ describe('Chess Figures drop handling', () => {
     expect(dropOn('e5')).toBe(false);
 
     expect(types()).toEqual([ActionTypes.CLEAR_CANDIDATE_MOVES]);
+  });
+
+  // A click that moves the pointer a little turns into a drag; putting the piece back where it was
+  // leaves it selected, as a click would, so its highlighted squares can still be clicked.
+  it('keeps the piece selected when it is dropped back on its own square', () => {
+    const { dropOn, types } = pickUp({ position: createPosition(), from: 'g1' });
+
+    expect(dropOn('g1')).toBe(false);
+
+    expect(types()).toEqual([]);
   });
 
   // Highlights stay after a drag that ended off the board; the next drop must not reuse them.

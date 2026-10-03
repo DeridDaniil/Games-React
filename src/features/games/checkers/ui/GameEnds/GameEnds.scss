@@ -31,6 +31,13 @@
     font-size: var(--text-lg);
   }
 
+  // Said under the result when the profile could not store it.
+  .checkers-game-ends--error {
+    margin: var(--space-2) 0 0;
+    color: var(--color-danger);
+    font-size: var(--text-sm);
+  }
+
   .button {
     margin-top: var(--space-3);
   }

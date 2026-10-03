@@ -8,16 +8,18 @@ import { initCheckersGame } from '../../model/constant';
 import { ActionTypes, Status } from '../../model/types';
 import type { CheckersAction, CheckersState, CheckersStatus } from '../../model/types';
 import { ProfileProvider } from '../../../../profile/model/ProfileProvider';
-import { loadSession, register } from '../../../../profile/lib/profileStorage';
+import { SAVE_ERROR, loadSession } from '../../../../profile/lib/profileStorage';
+import { storeProfile } from '../../../../profile/test/profileFixtures';
 import { getElement } from '../../../../../shared/test/dom';
 import type { Dispatch } from 'react';
 
 beforeEach(() => {
   localStorage.clear();
-  register('tester', 'Tester', 'secret');
+  storeProfile();
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   localStorage.clear();
 });
 
@@ -65,6 +67,21 @@ describe('Checkers GameEnds', () => {
     const { dispatch } = renderWithStatus(Status.blackWins);
 
     expect(dispatch).toHaveBeenCalledWith({ type: ActionTypes.RESULT_RECORDED });
+  });
+
+  // The game still ends as it should. The player is told its result is not stored, and the game stays
+  // unrecorded, so if Take Back resumes it, its result can be stored when it ends again.
+  it('says so when the result cannot be stored, and leaves the game unrecorded', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+    });
+
+    const { dispatch } = renderWithStatus(Status.whiteWins);
+
+    expect(screen.getByRole('heading', { name: Status.whiteWins })).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain(SAVE_ERROR);
+    expect(dispatch).not.toHaveBeenCalledWith({ type: ActionTypes.RESULT_RECORDED });
+    expect(checkersStats()).toEqual(noGames);
   });
 
   // A game resumed by Take Back after it ended keeps the result recorded when it first ended.

@@ -2,7 +2,7 @@ import { pieceColor, pieceType } from '../helper';
 import type { ChessPiece, ChessPosition } from '../../model/types';
 
 // A piece going from [axisY, axisX] to [y, x] in `position`.
-export interface PieceMove {
+interface PieceMove {
   position: ChessPosition;
   figure: ChessPiece;
   axisY: number;

@@ -1,8 +1,7 @@
+import { useEffect, useRef } from 'react';
 import type { DragEvent } from 'react';
-import arbiter from '../../lib/arbiter/arbiter';
-import { generateCandidateAttack, generateCandidateMoves } from '../../model/actions/move';
+import { canPickUpChecker, clearCandidates, selectChecker } from '../../model/actions/move';
 import { useCheckersContext } from '../../model/Context';
-import { Status } from '../../model/types';
 import type { CheckerPiece } from '../../model/types';
 import './Checker.scss';
 
@@ -14,14 +13,15 @@ interface CheckerProps {
 
 function Checker({ axisY, axisX, checker }: CheckerProps) {
   const { checkersState, dispatch } = useCheckersContext();
-  const { turn, position, forcedCapturePieces, status } = checkersState;
-  const currentPosition = position[position.length - 1];
+  const { turn, forcedCapturePieces } = checkersState;
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const gameOver = status !== Status.ongoing;
+  useEffect(() => () => clearTimeout(hideTimerRef.current), []);
+
   const isOurTurn = turn === checker.slice(0, 5);
   const hasForcedCaptures = forcedCapturePieces && forcedCapturePieces.length > 0;
   const isForcedPiece = hasForcedCaptures && forcedCapturePieces.some(p => p[0] === axisY && p[1] === axisX);
-  const canDrag = !gameOver && isOurTurn && (!hasForcedCaptures || isForcedPiece);
+  const canDrag = canPickUpChecker(checkersState, [axisY, axisX]);
 
   const onDragStart = (e: DragEvent<HTMLDivElement>) => {
     if (!canDrag) {
@@ -32,17 +32,18 @@ function Checker({ axisY, axisX, checker }: CheckerProps) {
     e.dataTransfer.setData('text/plain', `${axisY}, ${axisX}, ${checker}`);
     // The checker (it has no children, so it is the drag target) hides once the drag has its image.
     const dragged = e.currentTarget;
-    setTimeout(() => {
+    hideTimerRef.current = setTimeout(() => {
       dragged.style.display = 'none';
     }, 0);
-    const candidateMoves = arbiter.getRegularMoves({ position: currentPosition, checker, axisY, axisX });
-    const candidateAttack = arbiter.getAttackingMoves({ position: currentPosition, checker, axisY, axisX });
-    dispatch(generateCandidateAttack({ candidateAttack }));
-    dispatch(generateCandidateMoves({ candidateMoves }));
+    selectChecker(checkersState, [axisY, axisX]).forEach(dispatch);
   }
 
+  // The checker shows again however the drag ended. A drag that was cancelled or ended off the board
+  // moved nothing, so its highlights (moves and captures) go too; a drop on the board has dealt with them.
   const onDragEnd = (e: DragEvent<HTMLDivElement>) => {
+    clearTimeout(hideTimerRef.current);
     e.currentTarget.style.display = 'block';
+    if (e.dataTransfer.dropEffect === 'none') dispatch(clearCandidates());
   };
 
   const classNames = [`checker`, checker, `p-${axisY}${axisX}`];

@@ -3,14 +3,14 @@ import type { ChessPiece, ChessPosition } from '../../model/types';
 import type { PlayerColor, Square } from '../../../shared/model/types';
 
 // A piece and the square it stands on.
-export interface FigureAt {
+interface FigureAt {
   figure: ChessPiece;
   axisY: number;
   axisX: number;
 }
 
 // A piece on the board, as the move generators take it.
-export interface PieceAt extends FigureAt {
+interface PieceAt extends FigureAt {
   position: ChessPosition;
 }
 
@@ -144,7 +144,7 @@ export const getPawnMoves = ({ position, figure, axisY, axisX }: PieceAt): Squar
 }
 
 // `prevPosition` is the position before the last move; without it en passant is not seen.
-export const getPawnCaptures = ({ position, prevPosition, figure, axisY, axisX }: PieceAt & { prevPosition?: ChessPosition }): Square[] => {
+export const getPawnCaptures = ({ position, prevPosition, figure, axisY, axisX }: PieceAt & { prevPosition?: ChessPosition | undefined }): Square[] => {
   const moves: Square[] = [];
   const isWhite = figure.slice(0, 5) === 'white';
   const moveY = isWhite ? 1 : -1;

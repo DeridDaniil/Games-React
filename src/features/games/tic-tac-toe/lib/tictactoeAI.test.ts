@@ -211,6 +211,36 @@ describe('getAIMove', () => {
       expect(humanWins(emptyBoard(3), 'X', 'O', 'X')).toBe(0);
     }, 30000);
 
+    it('takes its own win in one move on 7x7 rather than blocking', () => {
+      // X threatens 17 (third row); O can finish the sixth column at 19 or 47.
+      const cells = board('.......', '.......', 'XXX....', '.....O.', '.....O.', '.....O.', '.......');
+
+      expect(getAIMove(cells, 7, 'unbeatable', 'O', 'X')).toBe(19);
+    });
+
+    it('blocks a win in one move on 7x7', () => {
+      const cells = board('.......', '.......', 'XXX....', '...O...', '..O....', '.......', '.......');
+
+      expect(getAIMove(cells, 7, 'unbeatable', 'O', 'X')).toBe(17);
+    });
+
+    it('answers a quiet 7x7 middle game with an empty cell next to the marks', () => {
+      const cells = board('.......', '.X..O..', '..O..O.', '....XO.', '.X.OOX.', '.X.X...', '.......');
+      const move = aiMove(cells, 7, 'unbeatable', 'X', 'O');
+      const [row, col] = [Math.floor(move / 7), move % 7];
+      const nearby = [-1, 0, 1].flatMap(dr => [-1, 0, 1].map(dc => [row + dr, col + dc]))
+        .filter(([r, c]) => r >= 0 && r < 7 && c >= 0 && c < 7 && (r !== row || c !== col))
+        .map(([r, c]) => cells[r * 7 + c]);
+
+      expect(cells[move]).toBe(' ');
+      expect(nearby.some(cell => cell !== ' ')).toBe(true);
+    });
+
+    it('works out the winning lines of a board size only once', () => {
+      expect(getWinCombinations(7)).toBe(getWinCombinations(7));
+      expect(getWinCombinations(5)).toBe(getWinCombinations(5));
+    });
+
     it('opens in the centre on larger boards', () => {
       expect(getAIMove(emptyBoard(5), 5, 'unbeatable', 'X', 'O')).toBe(12);
       expect(getAIMove(emptyBoard(7), 7, 'unbeatable', 'X', 'O')).toBe(24);

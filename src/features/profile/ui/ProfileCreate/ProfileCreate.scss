@@ -67,13 +67,12 @@
   }
 }
 
+// The app's mark from the navigation rail, drawn larger.
 .profile-create__mark {
   flex-shrink: 0;
+  width: 32px;
+  height: 32px;
   color: var(--color-accent);
-}
-
-.profile-create__mark-warm {
-  fill: var(--color-warm);
 }
 
 .profile-create__title {

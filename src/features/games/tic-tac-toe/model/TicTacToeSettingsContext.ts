@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import type { TicTacToeSettings } from './types';
 
-export interface TicTacToeSettingsContextValue {
+interface TicTacToeSettingsContextValue {
   settings: TicTacToeSettings;
   // Takes the values to change; choosing a value that is already set changes nothing.
   updateSettings: (patch: Partial<TicTacToeSettings>) => void;

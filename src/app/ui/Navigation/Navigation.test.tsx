@@ -4,7 +4,7 @@ import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Navigation from './Navigation';
 import { ProfileProvider } from '../../../features/profile/model/ProfileProvider';
-import { register } from '../../../features/profile/lib/profileStorage';
+import { storeProfile } from '../../../features/profile/test/profileFixtures';
 
 const renderAt = (path: string) => render(
   <MemoryRouter initialEntries={[path]}>
@@ -16,7 +16,7 @@ const renderAt = (path: string) => render(
 
 beforeEach(() => {
   localStorage.clear();
-  register('tester', 'Tester', 'secret');
+  storeProfile();
 });
 
 afterEach(() => {

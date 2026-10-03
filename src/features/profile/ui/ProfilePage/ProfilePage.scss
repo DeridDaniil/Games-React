@@ -101,6 +101,13 @@
   font-size: var(--text-sm);
 }
 
+// A change of the section that could not be stored on this device.
+.profile-section__error {
+  margin: var(--space-3) 0 0;
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
 // ── Overview: four totals in one row (two by two on phones), not cards ──
 
 .profile-overview {

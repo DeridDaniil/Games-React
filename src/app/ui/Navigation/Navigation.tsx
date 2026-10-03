@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { CircleDot, Crown, Grid3x3 } from 'lucide-react';
 import { useProfile } from '../../../features/profile/model/ProfileContext';
+import BrandMark from '../../../shared/ui/BrandMark/BrandMark';
 import './Navigation.scss';
 
 const GAMES = [
@@ -17,12 +18,7 @@ function Navigation() {
   return (
     <nav className="app-nav" aria-label="Main">
       <span className="app-nav__mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="24" height="24" focusable="false">
-          <rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor" />
-          <rect x="13.75" y="3.75" width="6.5" height="6.5" rx="1" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          <rect x="3.75" y="13.75" width="6.5" height="6.5" rx="1" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          <rect className="app-nav__mark-warm" x="13" y="13" width="8" height="8" rx="1.5" />
-        </svg>
+        <BrandMark />
       </span>
 
       <ul className="app-nav__list">

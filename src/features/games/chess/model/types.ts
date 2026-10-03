@@ -14,6 +14,7 @@ export const ActionTypes = {
   'TAKE_BACK': 'TAKE_BACK',
   'TICK': 'TICK',
   'TIMEOUT': 'TIMEOUT',
+  'SURRENDER': 'SURRENDER',
   'RESULT_RECORDED': 'RESULT_RECORDED'
 } as const;
 
@@ -25,7 +26,9 @@ export const Status = {
   'stalemate': 'Game draws due to stalemate',
   'insufficient': 'Game draws due to insufficient material',
   'whiteOnTime': 'White wins on time',
-  'blackOnTime': 'Black wins on time'
+  'blackOnTime': 'Black wins on time',
+  'whiteSurrender': 'White surrendered',
+  'blackSurrender': 'Black surrendered'
 } as const;
 
 export type ChessStatus = (typeof Status)[keyof typeof Status];
@@ -55,6 +58,8 @@ export interface ChessState {
   // Every position of the game, the current one last.
   position: ChessPosition[];
   turn: PlayerColor;
+  // The piece picked up by a drag or a tap, whose squares candidateMoves highlights.
+  selected: Square | null;
   candidateMoves: Square[];
   movesList: string[];
   clockStarted: boolean;
@@ -72,7 +77,7 @@ export interface ChessState {
 
 export type ChessAction =
   | { type: typeof ActionTypes.NEW_MOVE; payload: { newPosition: ChessPosition; newMove: string } }
-  | { type: typeof ActionTypes.GENERATE_CANDIDATE_MOVES; payload: { candidateMoves: Square[] } }
+  | { type: typeof ActionTypes.GENERATE_CANDIDATE_MOVES; payload: { candidateMoves: Square[]; from: Square } }
   | { type: typeof ActionTypes.CLEAR_CANDIDATE_MOVES }
   | { type: typeof ActionTypes.PROMOTION_OPEN; payload: PromotionSquare }
   | { type: typeof ActionTypes.PROMOTION_CLOSE }
@@ -85,6 +90,8 @@ export type ChessAction =
   | { type: typeof ActionTypes.TICK; payload: { delta: number } }
   // The side whose time ran out.
   | { type: typeof ActionTypes.TIMEOUT; payload: PlayerColor }
+  // The side to move gives the game up.
+  | { type: typeof ActionTypes.SURRENDER }
   | { type: typeof ActionTypes.RESULT_RECORDED };
 
 // The action with the given type, e.g. ChessActionOf<'TICK'>.

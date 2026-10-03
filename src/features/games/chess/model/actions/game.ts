@@ -22,6 +22,13 @@ export const detectCheckmate = (winner: PlayerColor): ChessActionOf<'WIN'> => {
   }
 }
 
+// The side to move gives the game up.
+export const surrender = (): ChessActionOf<'SURRENDER'> => {
+  return {
+    type: ActionTypes.SURRENDER
+  }
+}
+
 export const markResultRecorded = (): ChessActionOf<'RESULT_RECORDED'> => {
   return {
     type: ActionTypes.RESULT_RECORDED

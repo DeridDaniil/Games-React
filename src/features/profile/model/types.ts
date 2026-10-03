@@ -11,19 +11,29 @@ export type GameStats = Record<ResultType, number>;
 // The results of every game.
 export type Statistics = Record<GameId, GameStats>;
 
-// One profile as it is kept in localStorage: the users map holds a record per login. The password is
-// stored as entered (plain text, until the product decides otherwise).
-export interface UserRecord {
+// The profile the app works with. It never holds the password or anything derived from it.
+export interface Profile {
   login: string;
   name: string;
-  password: string;
   avatar: string;
   stats: Statistics;
   createdAt: string;
 }
 
-// The signed-in profile is the stored record itself, so saving it writes the same shape back.
-export type Profile = UserRecord;
+// What a profile keeps instead of its password: a PBKDF2-SHA-256 hash with a random salt (both
+// base64), so the password itself is never stored. `version` names the format for later changes.
+export interface PasswordCredential {
+  version: 1;
+  algorithm: 'PBKDF2-SHA-256';
+  salt: string;
+  iterations: number;
+  hash: string;
+}
+
+// One profile as it is kept in localStorage (the users map holds one per login).
+export interface StoredUser extends Profile {
+  credential: PasswordCredential;
+}
 
 // What the profile page lets the player change.
 export type ProfileChanges = Partial<Pick<Profile, 'name' | 'avatar'>>;
@@ -32,3 +42,7 @@ export type ProfileChanges = Partial<Pick<Profile, 'name' | 'avatar'>>;
 export type AuthResult =
   | { profile: Profile; error?: undefined }
   | { error: string; profile?: undefined };
+
+// Whether a change was stored; when the browser refuses (storage full or unavailable) nothing is
+// changed and `error` says so in the player's words.
+export type SaveResult = { ok: true } | { ok: false; error: string };

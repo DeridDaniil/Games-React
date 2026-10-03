@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, createEvent, fireEvent, render, screen, within } from '@testing-library/react';
 import Checkers from './Checkers';
 import { ProfileProvider } from '../../profile/model/ProfileProvider';
-import { loadSession, register } from '../../profile/lib/profileStorage';
+import { loadSession } from '../../profile/lib/profileStorage';
+import { storeProfile } from '../../profile/test/profileFixtures';
 import { boardRect, boardWith, sq } from '../shared/test/boardTestUtils';
 import { getElement, ofType } from '../../../shared/test/dom';
 import type { CheckerPiece, CheckersState } from './model/types';
@@ -93,7 +94,25 @@ const renderCheckers = () => {
   const historyRows = () => [...container.querySelectorAll('.game-move-history__row')]
     .map(row => [...row.children].map(cell => cell.textContent).join(' '));
 
-  return { pieceOn, draggable, pickUp, dropOn, move, play, movesList, historyRows };
+  // A tap (or click) in the middle of a square, landing on the checker there if there is one.
+  const tap = (square: string) => {
+    const [y, x] = sq(square);
+    const target = pieceElement(square) ?? layer;
+    const click = createEvent.click(target);
+    Object.defineProperty(click, 'clientX', { value: x * CELL_PX + CELL_PX / 2 });
+    Object.defineProperty(click, 'clientY', { value: (7 - y) * CELL_PX + CELL_PX / 2 });
+    fireEvent(target, click);
+  };
+  const taps = (...squares: string[]) => squares.forEach(tap);
+
+  // The board squares are listed from a8 to h1.
+  const cellOn = (square: string) => {
+    const [y, x] = sq(square);
+    return ofType(container.querySelectorAll('.checkersBoard .cell')[(7 - y) * 8 + x], HTMLElement);
+  };
+  const count = (state: string) => container.querySelectorAll(`.checkersBoard .cell.${state}`).length;
+
+  return { pieceElement, pieceOn, draggable, pickUp, dropOn, move, play, movesList, historyRows, tap, taps, cellOn, count };
 };
 
 // The timer card is the closest ancestor with a colour modifier (game-timer--white / --black).
@@ -112,7 +131,7 @@ const surrender = () => {
 beforeEach(() => {
   vi.useFakeTimers();
   localStorage.clear();
-  register('tester', 'Tester', 'secret');
+  storeProfile();
 });
 
 afterEach(() => {
@@ -279,6 +298,118 @@ describe('Checkers (whole game)', () => {
     expect(game.pieceOn('b6')).toBe('black-checker');
     expect(game.pieceOn('d4')).toBe('white-checker');
     expect(game.movesList()).toEqual(['c3-d4']);
+  });
+});
+
+describe('Checkers moves by tap or click', () => {
+  it('moves a checker by tapping it and then one of its highlighted squares', () => {
+    const game = renderCheckers();
+
+    game.tap('c3');
+    expect(game.cellOn('c3').classList.contains('selected')).toBe(true);
+    expect(game.cellOn('b4').classList.contains('highlight')).toBe(true);
+    expect(game.cellOn('d4').classList.contains('highlight')).toBe(true);
+    expect(game.count('highlight')).toBe(2);
+
+    game.taps('d4', 'b6', 'a5');
+
+    expect(game.pieceOn('d4')).toBe('white-checker');
+    expect(game.pieceOn('a5')).toBe('black-checker');
+    expect(game.movesList()).toEqual(['c3-d4', 'b6-a5']);
+    expect(game.count('highlight')).toBe(0);
+    expect(game.count('selected')).toBe(0);
+  });
+
+  it('puts the checker down when it is tapped again', () => {
+    const game = renderCheckers();
+
+    game.taps('c3', 'c3');
+
+    expect(game.count('selected')).toBe(0);
+    expect(game.count('highlight')).toBe(0);
+  });
+
+  it('drops the selection when a square that is not highlighted is tapped', () => {
+    const game = renderCheckers();
+
+    game.taps('c3', 'e5');
+
+    expect(game.pieceOn('c3')).toBe('white-checker');
+    expect(game.movesList()).toEqual([]);
+    expect(game.count('selected')).toBe(0);
+    expect(game.count('highlight')).toBe(0);
+  });
+
+  it('only selects a checker that must capture and keeps it selected through a chain capture', () => {
+    const game = renderCheckers();
+    game.play(['a3', 'b4'], ['b6', 'a5'], ['c3', 'd4']);
+
+    // h6 is blocked by the forced capture.
+    game.tap('h6');
+    expect(game.count('selected')).toBe(0);
+
+    game.tap('a5');
+    expect(game.cellOn('a5').classList.contains('selected')).toBe(true);
+    expect(game.cellOn('b4').classList.contains('attacking')).toBe(true);
+    expect(game.cellOn('c3').classList.contains('highlight')).toBe(true);
+
+    game.tap('c3');
+    expect(game.pieceOn('b4')).toBeNull();
+    // The chain goes on with the same checker, already selected for its next jump.
+    expect(game.cellOn('c3').classList.contains('selected')).toBe(true);
+    expect(game.cellOn('d4').classList.contains('attacking')).toBe(true);
+    expect(game.cellOn('e5').classList.contains('highlight')).toBe(true);
+    expect(game.movesList()).toEqual(['a3-b4', 'b6-a5', 'c3-d4']);
+
+    game.tap('e5');
+    expect(game.pieceOn('e5')).toBe('black-checker');
+    expect(game.pieceOn('d4')).toBeNull();
+    expect(game.movesList()).toEqual(['a3-b4', 'b6-a5', 'c3-d4', 'a5xc3xe5']);
+    expect(game.count('selected')).toBe(0);
+  });
+
+  it('promotes in the middle of a chain capture made by taps', () => {
+    startFrom({ c6: 'white-checker', d7: 'black-checker', f7: 'black-checker', h2: 'black-checker' });
+    const game = renderCheckers();
+
+    game.taps('c6', 'e8');
+    expect(game.pieceOn('e8')).toBe('white-queen');
+    expect(game.cellOn('e8').classList.contains('selected')).toBe(true);
+
+    game.tap('g6');
+
+    expect(game.pieceOn('g6')).toBe('white-queen');
+    expect(game.movesList()).toEqual(['c6xe8xg6']);
+  });
+
+  it('clears the highlights and shows the checker again when a drag ends off the board', () => {
+    const game = renderCheckers();
+
+    game.pickUp('c3');
+    advance(0);
+    const checker = ofType(game.pieceElement('c3'), HTMLElement);
+    expect(checker.style.display).toBe('none');
+    expect(game.count('highlight')).toBe(2);
+
+    fireEvent.dragEnd(checker, { dataTransfer: { dropEffect: 'none' } });
+
+    expect(checker.style.display).toBe('block');
+    expect(game.count('highlight')).toBe(0);
+    expect(game.count('selected')).toBe(0);
+  });
+
+  it('clears the capture highlights too when a capturing drag ends off the board', () => {
+    const game = renderCheckers();
+    game.play(['a3', 'b4'], ['b6', 'a5'], ['c3', 'd4']);
+
+    game.pickUp('a5');
+    expect(game.count('attacking')).toBe(1);
+
+    fireEvent.dragEnd(ofType(game.pieceElement('a5'), HTMLElement), { dataTransfer: { dropEffect: 'none' } });
+
+    expect(game.count('attacking')).toBe(0);
+    expect(game.count('highlight')).toBe(0);
+    expect(game.pieceOn('b4')).toBe('white-checker');
   });
 });
 

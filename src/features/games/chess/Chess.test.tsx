@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, createEvent, fireEvent, render, screen, within } from '@testing-library/react';
 import Chess from './Chess';
 import { ProfileProvider } from '../../profile/model/ProfileProvider';
-import { loadSession, register } from '../../profile/lib/profileStorage';
+import { loadSession } from '../../profile/lib/profileStorage';
+import { storeProfile } from '../../profile/test/profileFixtures';
 import { boardRect, boardWith, sq } from '../shared/test/boardTestUtils';
 import { getElement, ofType } from '../../../shared/test/dom';
 import type { ChessPiece, ChessState } from './model/types';
@@ -74,7 +75,25 @@ const renderChess = () => {
   const movesList = () => [...container.querySelectorAll('.game-move-history__move')].map(move => move.textContent);
   const choosePromotion = (figure: ChessPiece) => fireEvent.click(getElement(container, `.popup .${figure}`));
 
-  return { container, pieceOn, pickUp, dropOn, move, play, movesList, choosePromotion };
+  // A tap (or click) in the middle of a square, landing on the piece there if there is one.
+  const tap = (square: string) => {
+    const [y, x] = sq(square);
+    const target = pieceElement(square) ?? layer;
+    const click = createEvent.click(target);
+    Object.defineProperty(click, 'clientX', { value: x * CELL_PX + CELL_PX / 2 });
+    Object.defineProperty(click, 'clientY', { value: (7 - y) * CELL_PX + CELL_PX / 2 });
+    fireEvent(target, click);
+  };
+
+  // The board squares are listed from a8 to h1.
+  const cellOn = (square: string) => {
+    const [y, x] = sq(square);
+    return ofType(container.querySelectorAll('.chessBoard .cell')[(7 - y) * 8 + x], HTMLElement);
+  };
+  const highlightedCount = () => container.querySelectorAll('.cell.highlight, .cell.attacking').length;
+  const selectedCount = () => container.querySelectorAll('.cell.selected').length;
+
+  return { container, pieceElement, pieceOn, pickUp, dropOn, move, play, movesList, choosePromotion, tap, cellOn, highlightedCount, selectedCount };
 };
 
 // The timer card is the closest ancestor with a colour modifier (game-timer--white / --black).
@@ -86,7 +105,7 @@ const chessStats = () => loadSession()?.stats.chess;
 beforeEach(() => {
   vi.useFakeTimers();
   localStorage.clear();
-  register('tester', 'Tester', 'secret');
+  storeProfile();
 });
 
 afterEach(() => {
@@ -295,7 +314,7 @@ describe('Chess (whole game)', () => {
     expect(chessStats()).toEqual({ wins: 0, losses: 1, draws: 0 });
   });
 
-  it('surrender starts a new game without recording a result (current behaviour)', () => {
+  it('ends the game when Black surrenders: White wins and the profile records a win', () => {
     const game = renderChess();
     game.move('e2', 'e4');
 
@@ -306,10 +325,31 @@ describe('Chess (whole game)', () => {
     fireEvent.click(confirm);
     advance(250);
 
+    expect(screen.getByRole('heading', { name: 'White wins' })).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('White winsBlack surrendered');
+    expect(game.pieceOn('e4')).toBe('white-pawn');
+    expect(game.movesList()).toEqual(['e4']);
+    expect(chessStats()).toEqual({ wins: 1, losses: 0, draws: 0 });
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Game' }));
+
+    expect(document.querySelector('.game_ends')).toBeNull();
     expect(game.pieceOn('e2')).toBe('white-pawn');
-    expect(game.pieceOn('e4')).toBeNull();
     expect(game.movesList()).toEqual([]);
-    expect(chessStats()).toEqual({ wins: 0, losses: 0, draws: 0 });
+    expect(chessStats()).toEqual({ wins: 1, losses: 0, draws: 0 });
+  });
+
+  it('ends the game when White surrenders: Black wins and the profile records a loss', () => {
+    renderChess();
+
+    fireEvent.click(screen.getByText('Surrender'));
+    advance(2000);
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Surrender' }));
+    advance(250);
+
+    expect(screen.getByRole('heading', { name: 'Black wins' })).toBeTruthy();
+    expect(screen.getByText('White surrendered')).toBeTruthy();
+    expect(chessStats()).toEqual({ wins: 0, losses: 1, draws: 0 });
   });
 
   it('asks for the surrender in a modal dialog with the chess message', () => {
@@ -319,7 +359,7 @@ describe('Chess (whole game)', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Confirm Surrender' });
     expect(dialog.getAttribute('aria-modal')).toBe('true');
-    expect(within(dialog).getByText(/start a new one from the initial position/)).toBeTruthy();
+    expect(within(dialog).getByText(/This will end the current game\./)).toBeTruthy();
   });
 
   it('keeps the game when the surrender is cancelled', () => {
@@ -345,6 +385,115 @@ describe('Chess (whole game)', () => {
     expect(game.pieceOn('e7')).toBe('black-pawn');
     expect(game.pieceOn('e4')).toBe('white-pawn');
     expect(game.movesList()).toEqual(['e4']);
+  });
+});
+
+describe('Chess moves by tap or click', () => {
+  it('moves a piece by tapping it and then one of its highlighted squares', () => {
+    const game = renderChess();
+
+    game.tap('e2');
+    expect(game.cellOn('e2').classList.contains('selected')).toBe(true);
+    expect(game.cellOn('e3').classList.contains('highlight')).toBe(true);
+    expect(game.cellOn('e4').classList.contains('highlight')).toBe(true);
+    expect(game.highlightedCount()).toBe(2);
+
+    game.tap('e4');
+    game.tap('e7');
+    game.tap('e5');
+
+    expect(game.pieceOn('e4')).toBe('white-pawn');
+    expect(game.pieceOn('e5')).toBe('black-pawn');
+    expect(game.movesList()).toEqual(['e4', 'e5']);
+    expect(game.highlightedCount()).toBe(0);
+    expect(game.selectedCount()).toBe(0);
+  });
+
+  it('puts the piece down when it is tapped again', () => {
+    const game = renderChess();
+
+    game.tap('e2');
+    game.tap('e2');
+
+    expect(game.selectedCount()).toBe(0);
+    expect(game.highlightedCount()).toBe(0);
+    expect(game.movesList()).toEqual([]);
+  });
+
+  it('switches to another piece of the side to move when that piece is tapped', () => {
+    const game = renderChess();
+
+    game.tap('e2');
+    game.tap('g1');
+
+    expect(game.cellOn('g1').classList.contains('selected')).toBe(true);
+    expect(game.selectedCount()).toBe(1);
+    expect(game.cellOn('f3').classList.contains('highlight')).toBe(true);
+    expect(game.cellOn('h3').classList.contains('highlight')).toBe(true);
+    expect(game.highlightedCount()).toBe(2);
+  });
+
+  it('drops the selection when a square that is not highlighted is tapped', () => {
+    const game = renderChess();
+
+    game.tap('e2');
+    game.tap('e5');
+
+    expect(game.pieceOn('e2')).toBe('white-pawn');
+    expect(game.pieceOn('e5')).toBeNull();
+    expect(game.movesList()).toEqual([]);
+    expect(game.selectedCount()).toBe(0);
+    expect(game.highlightedCount()).toBe(0);
+  });
+
+  it('ignores taps on the pieces of the side that is not to move', () => {
+    const game = renderChess();
+
+    game.tap('e7');
+
+    expect(game.selectedCount()).toBe(0);
+    expect(game.highlightedCount()).toBe(0);
+  });
+
+  it('starts the clock when White selects a piece by tap', () => {
+    const game = renderChess();
+
+    game.tap('e2');
+    advance(2000);
+
+    expect([clock('White'), clock('Black')]).toEqual(['04:58', '05:00']);
+  });
+
+  it('opens the promotion choice when a pawn is tapped onto the last rank', () => {
+    startFrom({ e1: 'white-king', b7: 'white-pawn', h8: 'black-king' });
+    const game = renderChess();
+
+    game.tap('b7');
+    game.tap('b8');
+    expect(game.container.querySelector('.promotion-choise')).not.toBeNull();
+    expect(game.pieceOn('b7')).toBe('white-pawn');
+
+    game.choosePromotion('white-queen');
+
+    expect(game.pieceOn('b8')).toBe('white-queen');
+    expect(game.movesList()).toEqual(['b8=Q']);
+  });
+
+  it('clears the highlights and shows the piece again when a drag ends off the board', () => {
+    const game = renderChess();
+
+    game.pickUp('e2');
+    advance(0);
+    const piece = ofType(game.pieceElement('e2'), HTMLElement);
+    expect(piece.style.display).toBe('none');
+    expect(game.highlightedCount()).toBe(2);
+
+    fireEvent.dragEnd(piece, { dataTransfer: { dropEffect: 'none' } });
+
+    expect(piece.style.display).toBe('block');
+    expect(game.highlightedCount()).toBe(0);
+    expect(game.selectedCount()).toBe(0);
+    expect(game.movesList()).toEqual([]);
   });
 });
 

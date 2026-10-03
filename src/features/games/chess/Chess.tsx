@@ -7,7 +7,7 @@ import Popup from './ui/Popup/Popup';
 import { ChessReducer } from './model/Reducer';
 import { DEFAULT_TIME_CONTROL_MS, initChessGame } from './model/constant';
 import { takeBack } from './model/actions/move';
-import { setupNewGame } from './model/actions/game';
+import { surrender } from './model/actions/game';
 import { closePopup } from './model/actions/popup';
 import PromotionBox from './ui/Popup/PromotionBox/PromotionBox';
 import GameEnds from './ui/Popup/GameEnds/GameEnds';
@@ -21,7 +21,7 @@ import GameAction from '../shared/ui/GameAction/GameAction';
 import SurrenderControl from '../shared/ui/SurrenderControl/SurrenderControl';
 
 const CONTEXT = `Two players · ${DEFAULT_TIME_CONTROL_MS / 60000} min each`;
-const SURRENDER_MESSAGE = 'This will end the current game and start a new one from the initial position.';
+const SURRENDER_MESSAGE = 'This will end the current game.';
 
 function Chess() {
   const [chessState, dispatch] = useReducer(ChessReducer, initChessGame);
@@ -38,11 +38,11 @@ function Chess() {
     </>
   );
 
-  // A chess surrender just starts a new game; no result is recorded (current behaviour).
+  // A surrender ends the game against the side to move; GameEnds then shows and records the result.
   const actions = (
     <>
       <GameAction icon={<Undo2 />} onClick={() => dispatch(takeBack())}>Take Back</GameAction>
-      <SurrenderControl message={SURRENDER_MESSAGE} onConfirm={() => dispatch(setupNewGame())} />
+      <SurrenderControl message={SURRENDER_MESSAGE} onConfirm={() => dispatch(surrender())} />
     </>
   );
 

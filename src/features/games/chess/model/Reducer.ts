@@ -40,6 +40,7 @@ export const ChessReducer = (state: ChessState, action: ChessAction): ChessState
     case ActionTypes.GENERATE_CANDIDATE_MOVES: {
       return {
         ...state,
+        selected: action.payload.from,
         candidateMoves: action.payload.candidateMoves
       }
     }
@@ -47,6 +48,7 @@ export const ChessReducer = (state: ChessState, action: ChessAction): ChessState
     case ActionTypes.CLEAR_CANDIDATE_MOVES: {
       return {
         ...state,
+        selected: null,
         candidateMoves: []
       }
     }
@@ -111,6 +113,21 @@ export const ChessReducer = (state: ChessState, action: ChessAction): ChessState
         blackTime: loser === 'black' ? 0 : state.blackTime,
         status: winner === 'white' ? Status.whiteOnTime : Status.blackOnTime,
         promotionSquare: null,
+        selected: null,
+        candidateMoves: []
+      };
+    }
+
+    // The side to move gives up a game in play (a pending promotion choice goes with it); the
+    // result screen then shows the other side as the winner.
+    case ActionTypes.SURRENDER: {
+      if (state.status !== Status.ongoing && state.status !== Status.promoting) return state;
+
+      return {
+        ...state,
+        status: state.turn === 'white' ? Status.whiteSurrender : Status.blackSurrender,
+        promotionSquare: null,
+        selected: null,
         candidateMoves: []
       };
     }
@@ -145,6 +162,7 @@ export const ChessReducer = (state: ChessState, action: ChessAction): ChessState
           blackTime: loser === 'black' ? 0 : state.blackTime,
           status: winner === 'white' ? Status.whiteOnTime : Status.blackOnTime,
           promotionSquare: null,
+          selected: null,
           candidateMoves: []
         };
       }
@@ -162,6 +180,7 @@ export const ChessReducer = (state: ChessState, action: ChessAction): ChessState
           ...state,
           status: Status.ongoing,
           promotionSquare: null,
+          selected: null,
           candidateMoves: []
         };
       }
@@ -189,6 +208,7 @@ export const ChessReducer = (state: ChessState, action: ChessAction): ChessState
           castlingHistory,
           castleDirection: previousCastling,
           status: Status.ongoing,
+          selected: null,
           candidateMoves: [],
           clockStarted: position.length > 1,
           turnStartTimes: previousTurnStart,
