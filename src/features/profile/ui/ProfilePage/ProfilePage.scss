@@ -1,0 +1,180 @@
+@use '../../../../shared/styles/breakpoints' as bp;
+
+// One quiet column: the player at the top, then their results and the account, separated by
+// whitespace and hairlines rather than cards.
+.profile-page {
+  width: 100%;
+  max-width: calc(760px + 2 * var(--page-pad-x));
+  margin-inline: auto;
+  padding: var(--page-pad-y) var(--page-pad-x) var(--space-7);
+}
+
+// ── Identity ──
+
+.profile-identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-5);
+
+  @include bp.below(bp.$phone) {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
+
+.profile-identity__avatar {
+  width: 80px;
+  height: 80px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  background-color: var(--color-surface);
+  object-fit: cover;
+
+  @include bp.below(bp.$phone) {
+    width: 72px;
+    height: 72px;
+  }
+}
+
+.profile-identity__text {
+  min-width: 0;
+}
+
+.profile-identity__name {
+  margin: 0;
+  font-size: var(--text-2xl);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+
+  @include bp.below(bp.$phone) {
+    font-size: 1.625rem;
+  }
+}
+
+.profile-identity__meta {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-2);
+  margin: 6px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+}
+
+.profile-identity__dot {
+  color: var(--color-text-muted);
+}
+
+// The pencil is sage: editing is the one action the header offers.
+.profile-identity__edit {
+  .button__icon {
+    color: var(--color-accent-strong);
+  }
+
+  @include bp.below(bp.$phone) {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+// ── Sections ──
+
+.profile-section {
+  margin-top: var(--space-7);
+
+  @include bp.below(bp.$phone) {
+    margin-top: var(--space-6);
+  }
+}
+
+.profile-section__title {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-md);
+  letter-spacing: -0.01em;
+}
+
+.profile-section__hint {
+  max-width: 62ch;
+  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+// A change of the section that could not be stored on this device.
+.profile-section__error {
+  margin: var(--space-3) 0 0;
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
+// ── Overview: four totals in one row (two by two on phones), not cards ──
+
+.profile-overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+
+  @include bp.below(bp.$phone) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// The number reads first; the label stays first in the markup, as a <dt> must.
+.profile-overview__item {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profile-overview__label {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.profile-overview__value {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+// ── Account ──
+
+.profile-account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+
+  @include bp.below(bp.$phone) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.profile-account__note {
+  display: flex;
+  gap: var(--space-2);
+  max-width: 54ch;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+
+  svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--color-text-muted);
+  }
+}

@@ -1,0 +1,79 @@
+// The result sits on a compact panel over the dimmed squares; the board stays readable around it.
+.checkers-game-ends {
+  position: absolute;
+  top: calc(var(--board-frame-width) + 1px);
+  left: calc(var(--board-frame-width) + 1px);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: calc(8 * var(--cell-size));
+  height: calc(8 * var(--cell-size));
+  padding: var(--space-4);
+  background-color: var(--color-scrim-board);
+
+  .checkers-game-ends--inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: min(100%, 260px);
+    padding: var(--space-5) var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface-raised);
+    box-shadow: var(--shadow-soft);
+    text-align: center;
+    animation: checkers-result-in var(--duration-slow) var(--ease-standard);
+  }
+
+  h2 {
+    margin: 0;
+    font-size: var(--text-lg);
+  }
+
+  // Said under the result when the profile could not store it.
+  .checkers-game-ends--error {
+    margin: var(--space-2) 0 0;
+    color: var(--color-danger);
+    font-size: var(--text-sm);
+  }
+
+  .button {
+    margin-top: var(--space-3);
+  }
+
+  // The checker images carry wide transparent margins, so the boxes are larger than the chess king's
+  // to look the same size.
+  .wins,
+  .draws {
+    height: 64px;
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+
+  .wins {
+    width: 64px;
+    background-position: center;
+
+    &.white {
+      background-image: url('../../assets/white-checker.png');
+    }
+
+    &.black {
+      background-image: url('../../assets/black-checker.png');
+    }
+  }
+
+  .draws {
+    width: 120px;
+    background-position: left, right;
+    background-image: url('../../assets/white-checker.png'), url('../../assets/black-checker.png');
+  }
+}
+
+@keyframes checkers-result-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

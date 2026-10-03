@@ -1,0 +1,41 @@
+.surrender-dialog .surrender-dialog__message {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  line-height: var(--leading-normal);
+}
+
+.surrender-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.surrender-dialog__confirm {
+  position: relative;
+  overflow: hidden;
+}
+
+// While Confirm is locked, a hairline fills up over the same delay.
+.surrender-dialog__confirm--waiting::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background-color: var(--color-danger);
+  transform-origin: left;
+  animation: surrender-confirm-delay var(--surrender-delay) linear forwards;
+}
+
+@keyframes surrender-confirm-delay {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}

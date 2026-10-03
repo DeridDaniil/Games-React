@@ -1,0 +1,108 @@
+// Design tokens: the only place where raw colours, sizes and timings live.
+// Components read them as CSS custom properties.
+
+:root {
+  color-scheme: dark;
+
+  // ── Surfaces: neutral charcoal, lightest last; never tinted, never black ──
+  --color-bg: #252727;
+  --color-bg-elevated: #2c2f2f;
+  --color-surface: #343737;
+  --color-surface-raised: #3a3d3d;
+  --color-surface-hover: #414545;
+  --color-surface-active: #484c4b;
+  --color-wash: rgba(240, 237, 231, 0.035);
+
+  // ── Lines ──
+  --color-border: rgba(240, 237, 231, 0.09);
+  --color-border-strong: rgba(240, 237, 231, 0.16);
+
+  // ── Scrims: behind dialogs, and a dark veil over a board while it waits for a decision ──
+  --color-scrim: rgba(12, 13, 13, 0.5);
+  --color-scrim-board: rgba(24, 26, 26, 0.45);
+
+  // ── Text: warm off-white, never pure white ──
+  --color-text: #f0ede7;
+  --color-text-secondary: #c0c2bd;
+  --color-text-muted: #a9ada7;
+
+  // ── Accents: sage marks meaningful states only; terracotta and gold in small doses ──
+  --color-accent: #879b93;
+  --color-accent-strong: #a1b1aa;
+  --color-accent-soft: rgba(135, 155, 147, 0.14);
+  --color-on-accent: #1d2020;
+  --color-warm: #c98268;
+  --color-warm-strong: #e5a58b;
+  --color-warm-soft: rgba(201, 130, 104, 0.11);
+  --color-gold: #c2a36f;
+  --color-gold-strong: #d0b47c;
+
+  // ── Semantic ──
+  --color-success: #93a99b;
+  --color-warning: var(--color-gold-strong);
+  --color-danger: var(--color-warm-strong);
+
+  // ── Board: stone and grey squares with a hint of sage, in a dark wood frame ──
+  --board-light: #cfc4b2;
+  --board-dark: #737b76;
+  --board-frame: #605850;
+  --board-frame-edge: #756c62;
+  --board-coord-on-light: #524a42;
+  --board-coord-on-dark: #080808;
+  --board-hint: rgba(18, 20, 20, 0.3);
+  // The page's charcoal around a selected square: 3.4:1 against dark squares, 8.7:1 against light ones.
+  --board-selected-ring: var(--color-bg);
+  --board-capture: rgba(212, 138, 110, 0.9);
+  --board-check: rgba(212, 120, 96, 0.45);
+  --board-check-ring: rgba(224, 136, 108, 0.9);
+  --board-forced: #a8823f;
+
+  // ── Typography ──
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --text-sm: 0.875rem;
+  --text-base: 0.9375rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2rem;
+
+  --weight-medium: 500;
+  --weight-semibold: 620;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --tracking-tight: -0.015em;
+
+  // ── Spacing ──
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  // ── Radii: small for controls inside things, medium for controls and the board, large for blocks ──
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  // ── Elevation: the board, panels laid on it, and dialogs; shadows stay thin on a dark room ──
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.22);
+  --shadow-board: 0 1px 2px rgba(0, 0, 0, 0.28), 0 10px 30px rgba(0, 0, 0, 0.18);
+  --shadow-overlay: 0 2px 8px rgba(0, 0, 0, 0.25), 0 24px 56px rgba(0, 0, 0, 0.35);
+
+  // ── Motion ──
+  --duration-fast: 140ms;
+  --duration-normal: 180ms;
+  --duration-slow: 220ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  // ── Layout ──
+  --app-nav-width: 88px;
+  --app-nav-height: 64px;
+  --page-pad-x: 40px;
+  --page-pad-y: 32px;
+  --control-height: 40px;
+}

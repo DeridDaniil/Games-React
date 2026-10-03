@@ -1,0 +1,39 @@
+// Promotion choice: the four pieces in a row on a small panel over the dimmed board.
+.popup__inner.promotion-choise {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(4, var(--cell-size));
+  gap: var(--space-1);
+  width: max-content;
+  height: max-content;
+  margin: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-raised);
+  box-shadow: var(--shadow-soft);
+  animation: promotion-in var(--duration-normal) var(--ease-standard);
+
+  .figure {
+    position: relative;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-standard);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-surface-hover);
+    }
+  }
+}
+
+@keyframes promotion-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

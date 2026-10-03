@@ -1,0 +1,18 @@
+// Layout breakpoints. Custom properties cannot be used in media conditions, so these stay
+// Sass values; this module outputs no CSS of its own.
+
+$phone: 520px;
+$small: 800px;
+$large: 1200px;
+
+@mixin below($width) {
+  @media (max-width: ($width - 0.02px)) {
+    @content;
+  }
+}
+
+@mixin from($width) {
+  @media (min-width: $width) {
+    @content;
+  }
+}

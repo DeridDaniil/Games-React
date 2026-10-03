@@ -1,0 +1,87 @@
+// The result sits on a compact panel over the dimmed board; the board stays readable around it.
+.game_ends {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+
+  .game_ends--inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: min(100%, 260px);
+    padding: var(--space-5) var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface-raised);
+    box-shadow: var(--shadow-soft);
+    text-align: center;
+    animation: chess-result-in var(--duration-slow) var(--ease-standard);
+  }
+
+  // The result is announced as an alert when the panel appears.
+  .game_ends--text {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  h2 {
+    margin: 0;
+    font-size: var(--text-lg);
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  // Said under the result when the profile could not store it.
+  .game_ends--error {
+    color: var(--color-danger);
+  }
+
+  .button {
+    margin-top: var(--space-3);
+  }
+
+  .wins,
+  .draws {
+    height: 56px;
+    margin-bottom: var(--space-1);
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+
+  .wins {
+    width: 56px;
+    background-position: center;
+
+    &.White {
+      background-image: url('../../../assets/white-king.png');
+    }
+
+    &.Black {
+      background-image: url('../../../assets/black-king.png');
+    }
+  }
+
+  .draws {
+    width: 112px;
+    background-position: left, right;
+    background-image: url('../../../assets/white-king.png'), url('../../../assets/black-king.png');
+  }
+}
+
+@keyframes chess-result-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

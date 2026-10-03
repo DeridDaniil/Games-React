@@ -1,0 +1,123 @@
+// Tic-tac-toe page: one centred column as wide as the board, so the header, the status line, the
+// board and its actions share the same edges. The board fits the page width and, on large screens,
+// the window height; --ttt-size is the number of cells per side.
+.tictactoe {
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: var(--page-pad-y) var(--page-pad-x);
+}
+
+.tictactoe__play {
+  --ttt-board-size: max(240px, min(480px, 100cqi - 2 * var(--page-pad-x), 100dvh - 300px));
+  --ttt-gap: clamp(4px, calc(var(--ttt-board-size) / var(--ttt-size) * 0.04), 6px);
+  --ttt-cell-size: calc(
+    (var(--ttt-board-size) - (var(--ttt-size) + 1) * var(--ttt-gap)) / var(--ttt-size)
+  );
+  --ttt-cell-radius: clamp(6px, calc(var(--ttt-cell-size) * 0.07), 12px);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.tictactoe__status {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+
+// One tray holds the cells, so they read as a single board rather than separate cards; a played
+// cell takes a faint tint of its mark.
+.tictactoe__board {
+  display: grid;
+  grid-template-columns: repeat(var(--ttt-size), var(--ttt-cell-size));
+  gap: var(--ttt-gap);
+  width: max-content;
+  padding: var(--ttt-gap);
+  border-radius: calc(var(--ttt-cell-radius) + var(--ttt-gap));
+  background-color: var(--color-bg-elevated);
+
+  .cell {
+    display: grid;
+    place-items: center;
+    width: var(--ttt-cell-size);
+    height: var(--ttt-cell-size);
+    padding: 0;
+    border: 0;
+    border-radius: var(--ttt-cell-radius);
+    background-color: var(--color-surface);
+    font-size: calc(var(--ttt-cell-size) * 0.46);
+    font-weight: var(--weight-medium);
+    line-height: 1;
+    transition: background-color var(--duration-fast) var(--ease-standard);
+
+    &:not([aria-disabled='true']):hover {
+      background-color: var(--color-surface-hover);
+    }
+
+    &[aria-disabled='true'] {
+      cursor: default;
+    }
+  }
+
+  .cell--x {
+    background-color: color-mix(in srgb, var(--color-warm) 6%, var(--color-surface));
+    color: var(--color-warm-strong);
+  }
+
+  .cell--o {
+    background-color: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface));
+    color: var(--color-accent-strong);
+  }
+
+  .cell--x,
+  .cell--o {
+    animation: ttt-mark-in var(--duration-normal) var(--ease-standard);
+  }
+}
+
+.tictactoe__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-height);
+}
+
+.tictactoe__result {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.tictactoe__result-text {
+  display: inline-block;
+  animation: ttt-result-in var(--duration-slow) var(--ease-standard);
+}
+
+.tictactoe__restart {
+  margin-left: auto;
+}
+
+// Said under the result when the profile could not store it.
+.tictactoe__save-error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
+@keyframes ttt-mark-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes ttt-result-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}

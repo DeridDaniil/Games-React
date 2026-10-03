@@ -1,0 +1,115 @@
+// A tabletop board: a dark wood frame around stone and grey squares, sized by --cell-size from the game
+// layout. It isolates its stacking so the squares (z-index -1) stay above its own frame.
+.chessBoard {
+  position: relative;
+  isolation: isolate;
+  padding: var(--board-frame-width);
+  border: 1px solid var(--board-frame-edge);
+  border-radius: var(--radius-md);
+  background-color: var(--board-frame);
+  box-shadow: var(--shadow-board);
+
+  .cells {
+    display: grid;
+    grid-template-columns: repeat(8, var(--cell-size));
+    grid-auto-rows: var(--cell-size);
+    overflow: hidden;
+    border-radius: 4px;
+
+    .cell {
+      position: relative;
+      z-index: -1;
+
+      &.white {
+        background-color: var(--board-light);
+      }
+
+      &.black {
+        background-color: var(--board-dark);
+      }
+
+      // Empty square the piece can move to.
+      &.highlight::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        width: 26%;
+        height: 26%;
+        margin: auto;
+        border-radius: 50%;
+        background-color: var(--board-hint);
+      }
+
+      // Square with a piece that can be captured: a terracotta ring around it.
+      &.attacking::before {
+        content: '';
+        position: absolute;
+        inset: 7%;
+        border: max(3px, calc(var(--cell-size) * 0.055)) solid var(--board-capture);
+        border-radius: 50%;
+      }
+
+      // King in check: a soft coral wash with a firmer ring.
+      &.checked::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-color: var(--board-check);
+        box-shadow: inset 0 0 0 max(2px, calc(var(--cell-size) * 0.04)) var(--board-check-ring);
+      }
+
+      // The square of the piece picked up by a tap or a drag: shaded like the move hints, with a ring
+      // that stands out on both square colours.
+      &.selected::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-color: var(--board-hint);
+        box-shadow: inset 0 0 0 max(2px, calc(var(--cell-size) * 0.04)) var(--board-selected-ring);
+      }
+    }
+  }
+
+  .ranks,
+  .files {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    font-size: max(9px, calc(var(--cell-size) * 0.14));
+    font-weight: var(--weight-semibold);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+
+    // Each label sits on a square; its class says which colour that square is.
+    .white {
+      color: var(--board-coord-on-light);
+    }
+
+    .black {
+      color: var(--board-coord-on-dark);
+    }
+  }
+
+  .ranks {
+    top: var(--board-frame-width);
+    left: var(--board-frame-width);
+    flex-direction: column;
+
+    span {
+      height: var(--cell-size);
+      padding: 0.4em 0 0 0.45em;
+    }
+  }
+
+  .files {
+    bottom: var(--board-frame-width);
+    left: var(--board-frame-width);
+
+    span {
+      width: var(--cell-size);
+      padding: 0 0.45em 0.4em 0;
+      text-align: right;
+    }
+  }
+}

@@ -1,0 +1,87 @@
+@use '../../../../../shared/styles/breakpoints' as bp;
+
+// A notation sheet rather than a table: a barely-there wash on the page, no frame, the latest move
+// picked out. It is as tall as its moves and only scrolls once they fill the column, so the column
+// stays open.
+.game-move-history {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-wash);
+}
+
+.game-move-history__title {
+  margin: 0 var(--space-4);
+  padding: var(--space-3) 0 var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  letter-spacing: normal;
+}
+
+.game-move-history__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--space-2) 0 var(--space-3);
+  overflow-y: auto;
+  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-width: thin;
+
+  &:focus-visible {
+    outline-offset: -2px;
+  }
+
+  @include bp.below(bp.$small) {
+    max-height: 220px;
+  }
+}
+
+.game-move-history__empty {
+  margin: 0;
+  padding: var(--space-1) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.game-move-history__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-move-history__row {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr 1fr;
+  align-items: baseline;
+  padding: 0 var(--space-4);
+  font-size: var(--text-base);
+  font-variant-numeric: tabular-nums;
+  line-height: 2;
+}
+
+.game-move-history__number {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+
+  &::after {
+    content: '.';
+  }
+}
+
+.game-move-history__move {
+  justify-self: start;
+  color: var(--color-text-secondary);
+}
+
+// The latest move: a small translucent sage chip that hugs the text without moving the column.
+.game-move-history__move--latest {
+  margin-left: -6px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  font-weight: var(--weight-semibold);
+}

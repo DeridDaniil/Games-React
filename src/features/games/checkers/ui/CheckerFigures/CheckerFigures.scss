@@ -1,0 +1,8 @@
+// Drop layer over the squares: exactly the 8×8 area, so a drop position maps onto its square.
+.checker-figures {
+  position: absolute;
+  top: calc(var(--board-frame-width) + 1px);
+  left: calc(var(--board-frame-width) + 1px);
+  width: calc(8 * var(--cell-size));
+  height: calc(8 * var(--cell-size));
+}

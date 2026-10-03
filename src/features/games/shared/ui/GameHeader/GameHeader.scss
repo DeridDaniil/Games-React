@@ -1,0 +1,37 @@
+@use '../../../../../shared/styles/breakpoints' as bp;
+
+// Title, a quiet line of context and the game's buttons; whitespace, not a rule, separates it from play.
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+
+  @include bp.below(bp.$phone) {
+    margin-bottom: var(--space-4);
+  }
+}
+
+.game-header__title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+
+  @include bp.below(bp.$phone) {
+    font-size: 1.625rem;
+  }
+}
+
+.game-header__context {
+  margin: 6px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+}
+
+.game-header__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-2);
+}

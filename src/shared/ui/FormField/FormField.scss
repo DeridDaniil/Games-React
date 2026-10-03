@@ -1,0 +1,41 @@
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.form-field__label {
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+// A recessed well, darker than the sheet it sits on. Its edge is what shows where the field is, so it
+// keeps 3:1 against the sheet (WCAG 1.4.11). 16px text keeps phones from zooming in on focus.
+.form-field__input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-text) 45%, var(--color-bg-elevated));
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text);
+  font-size: var(--text-md);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+
+  &:focus-visible {
+    border-color: var(--color-accent);
+    outline-offset: 0;
+  }
+
+  &[aria-invalid='true'] {
+    border-color: var(--color-danger);
+  }
+}
+
+.form-field__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

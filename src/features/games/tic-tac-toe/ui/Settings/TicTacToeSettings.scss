@@ -1,0 +1,61 @@
+.ttt-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.ttt-settings__group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ttt-settings__label {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+// Segmented control: a recessed dark track, the chosen option on a translucent sage tile.
+.ttt-settings__options {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-elevated);
+}
+
+.ttt-settings__option {
+  flex: 1;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+
+  &:hover {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  &[aria-pressed='true'] {
+    background-color: color-mix(in srgb, var(--color-accent) 24%, var(--color-bg-elevated));
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
+  }
+}
+
+.ttt-settings__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

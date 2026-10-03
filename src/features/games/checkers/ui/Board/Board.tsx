@@ -1,0 +1,50 @@
+import { useCheckersContext } from '../../model/Context';
+import './Board.scss';
+
+function Board() {
+  const axisY = Array.from({ length: 8 }, (_y, i) => 8 - i);
+  const axisX = Array.from({ length: 8 }, (_x, i) => i + 1);
+
+  const { checkersState } = useCheckersContext();
+
+  const getClassName = (y: number, x: number) => {
+    let style = 'cell';
+    style += (y + x) % 2 === 0 ? ' black' : ' white';
+
+    if (checkersState.candidateMoves?.find(m => m[0] === y && m[1] === x)) {
+      style += ' highlight';
+    }
+
+    if (checkersState.candidateAttack?.find(m => m[0] === y && m[1] === x)) {
+      style += ' attacking'
+    }
+
+    const { selected } = checkersState;
+    if (selected && selected[0] === y && selected[1] === x) style += ' selected';
+
+    return style;
+  }
+
+  return (
+    <div className="checkersBoard">
+      <div className="ranks">
+        {axisY.map(y => (
+          <span key={y} className={y % 2 === 0 ? 'white' : 'black'}>{y}</span>
+        ))}
+      </div>
+      <div className="cells">
+        {axisY.map((_y, y) =>
+          axisX.map((_x, x) =>
+            <div key={y + '-' + x} className={getClassName(7 - y, x)}></div>
+          ))}
+      </div>
+      <div className="files">
+        {axisX.map(x => (
+          <span key={x} className={x % 2 === 0 ? 'white' : 'black'}>{String.fromCharCode(x + 96)}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export default Board;
