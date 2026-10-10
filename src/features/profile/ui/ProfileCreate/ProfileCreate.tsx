@@ -136,7 +136,7 @@ function ProfileCreate() {
         <header className="profile-create__intro">
           <p className="profile-create__brand">
             <BrandMark className="profile-create__mark" />
-            Games-React
+            Boardroom
           </p>
           <h1 className="profile-create__title">Tic Tac Toe, Chess and Checkers</h1>
           <p className="profile-create__lead">
